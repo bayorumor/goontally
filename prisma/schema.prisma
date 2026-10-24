@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 Int                @id @default(autoincrement())
+  username           String             @unique
+  email              String             @unique
+  password           String
+  avatar             String?
+  // Wrong passwords in a row; reaching the limit locks login until lockedUntil.
+  failedLogins       Int                @default(0)
+  lockedUntil        DateTime?
+  // Set for accounts made or reset from the terminal: the next sign-in has
+  // to pick a new password before using the app.
+  mustChangePassword Boolean            @default(false)
+  // A temporary password stops working after this, unless it was changed.
+  passwordExpiresAt  DateTime?
+  // Bumped on every password change; sessions from before stop working.
+  sessionVersion     Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  persons            Person[]
+  groups             Group[]
+  entries            Entry[]
+  options            UserCustomOption[]
+}
+
+model Person {
+  id        Int           @id @default(autoincrement())
+  name      String
+  photoUrl  String?
+  userId    Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups    PersonGroup[]
+  entries   EntryPerson[]
+
+  @@unique([userId, name])
+}
+
+model Group {
+  id        Int           @id @default(autoincrement())
+  name      String
+  photoUrl  String?
+  userId    Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persons   PersonGroup[]
+
+  @@unique([userId, name])
+}
+
+model PersonGroup {
+  personId Int
+  groupId  Int
+  joinedAt DateTime @default(now())
+  person   Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([personId, groupId])
+  @@index([groupId])
+}
+
+model Entry {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  loggedAt   DateTime       @default(now())
+  mediumTags String[]
+  notes      String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persons    EntryPerson[]
+  thoughts   EntryThought[]
+
+  @@index([userId, loggedAt])
+}
+
+model EntryPerson {
+  entryId  Int
+  personId Int
+  entry    Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, personId])
+  @@index([personId])
+}
+
+model EntryThought {
+  id        Int    @id @default(autoincrement())
+  entryId   Int
+  tag       String
+  personIds Int[]
+  entry     Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+}
+
+model UserCustomOption {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  category  String
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, label])
+}
