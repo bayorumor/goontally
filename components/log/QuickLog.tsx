@@ -9,13 +9,14 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ImageUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
 import { useFeedback } from "@/components/ui/Feedback";
 import PhotoCropperModal from "@/components/PhotoCropperModal";
+import PhotoSlot from "@/components/ui/PhotoSlot";
 import { DEFAULT_MEDIUMS } from "@/lib/constants";
 import { titleCase } from "@/lib/format";
-import { PERSON_ASPECT } from "@/lib/image";
+import { PERSON_ASPECT, SQUARE_ASPECT } from "@/lib/image";
 import { DraftThought, Entry, Group, Person } from "@/lib/types";
 import GroupSelect from "./GroupSelect";
 import PersonPicker, { PickedPerson } from "./PersonPicker";
@@ -34,6 +35,8 @@ interface NewPersonExtras {
   group: Group | null;
   newGroupName: string;
   photo: File | null;
+  // Photo for a group that's being created along with the person.
+  groupPhoto: File | null;
 }
 
 // openLog(person) starts the sheet with that person already picked;
@@ -75,9 +78,11 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
   const [showThoughtErrors, setShowThoughtErrors] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
-  const [cropping, setCropping] = useState<{ key: string; file: File } | null>(
-    null,
-  );
+  const [cropping, setCropping] = useState<{
+    key: string;
+    file: File;
+    target: "person" | "group";
+  } | null>(null);
 
   const loadData = useCallback(() => {
     // Always refetch: persons may have been added or renamed elsewhere.
@@ -152,7 +157,12 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
     if (!p.person)
       setExtras((prev) => ({
         ...prev,
-        [p.key]: { group: null, newGroupName: "", photo: null },
+        [p.key]: {
+          group: null,
+          newGroupName: "",
+          photo: null,
+          groupPhoto: null,
+        },
       }));
   };
   const remove = (key: string) => {
@@ -225,8 +235,13 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
           row.personPhotoKey = p.key;
           fd.append(`photo:${p.key}`, x.photo);
         }
-        if (x?.newGroupName) row.newGroupName = x.newGroupName;
-        else if (x?.group) row.groupId = x.group.id;
+        if (x?.newGroupName) {
+          row.newGroupName = x.newGroupName;
+          if (x.groupPhoto) {
+            row.groupPhotoKey = `${p.key}g`;
+            fd.append(`photo:${p.key}g`, x.groupPhoto);
+          }
+        } else if (x?.group) row.groupId = x.group.id;
         return row;
       });
       fd.append(
@@ -277,10 +292,15 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
       {cropping && (
         <PhotoCropperModal
           file={cropping.file}
-          aspect={PERSON_ASPECT}
+          aspect={cropping.target === "group" ? SQUARE_ASPECT : PERSON_ASPECT}
           confirmLabel="Use photo"
           onConfirm={(file) => {
-            updateExtras(cropping.key, { photo: file });
+            updateExtras(
+              cropping.key,
+              cropping.target === "group"
+                ? { groupPhoto: file }
+                : { photo: file },
+            );
             setCropping(null);
           }}
           onCancel={() => setCropping(null)}
@@ -338,14 +358,33 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                     key={p.key}
                     className="rounded-md border border-border bg-surface-1 p-3"
                   >
-                    <p className="mb-2 text-[13px] text-muted">
-                      New person ·{" "}
-                      <span className="font-semibold text-text">
-                        {titleCase(p.newName)}
-                      </span>
-                    </p>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <div className="flex-1">
+                    {/* The person's own photo sits with their name, the
+                        group's logo with the group, each in its own shape. */}
+                    <div className="flex items-center gap-3">
+                      <PhotoSlot
+                        shape="portrait"
+                        file={x.photo}
+                        onPick={(file) =>
+                          setCropping({ key: p.key, file, target: "person" })
+                        }
+                        label={`Add a photo of ${titleCase(p.newName)}`}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[13px] text-muted">
+                          New person ·{" "}
+                          <span className="font-semibold text-text">
+                            {titleCase(p.newName)}
+                          </span>
+                        </p>
+                        <p className="text-[12px] text-subtle">
+                          {x.photo
+                            ? "Tap the photo to change it"
+                            : "Tap the frame to add their photo (optional)"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
                         <GroupSelect
                           value={
                             x.newGroupName
@@ -354,7 +393,11 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                           }
                           groups={data.groups}
                           onChange={(group) =>
-                            updateExtras(p.key, { group, newGroupName: "" })
+                            updateExtras(p.key, {
+                              group,
+                              newGroupName: "",
+                              groupPhoto: null,
+                            })
                           }
                           onNewGroup={(name) =>
                             updateExtras(p.key, {
@@ -365,21 +408,22 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                           placeholder="Group (optional)"
                         />
                       </div>
-                      <label className="btn btn-secondary cursor-pointer">
-                        <ImageUp size={16} />{" "}
-                        {x.photo ? "Photo added" : "Photo"}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          hidden
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) setCropping({ key: p.key, file });
-                            e.target.value = "";
-                          }}
+                      {x.newGroupName && (
+                        <PhotoSlot
+                          shape="square"
+                          file={x.groupPhoto}
+                          onPick={(file) =>
+                            setCropping({ key: p.key, file, target: "group" })
+                          }
+                          label={`Add a logo for ${titleCase(x.newGroupName)}`}
                         />
-                      </label>
+                      )}
                     </div>
+                    {x.newGroupName && (
+                      <p className="mt-1.5 text-[12px] text-subtle">
+                        New group · tap the square to add its logo (optional)
+                      </p>
+                    )}
                   </section>
                 );
               })}

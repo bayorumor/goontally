@@ -2,14 +2,14 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageUp, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import GroupSelect from "@/components/log/GroupSelect";
 import PersonSelectExclude from "@/components/add/PersonSelectExclude";
 import PhotoCropperModal from "@/components/PhotoCropperModal";
 import Avatar from "@/components/ui/Avatar";
+import PhotoSlot from "@/components/ui/PhotoSlot";
 import { useFeedback } from "@/components/ui/Feedback";
 import { PERSON_ASPECT, SQUARE_ASPECT } from "@/lib/image";
-import { useObjectUrl } from "@/lib/useObjectUrl";
 import { Group, Person } from "@/lib/types";
 
 interface Row {
@@ -175,11 +175,11 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
               />
             </div>
             {newGroupName && (
-              <PhotoButton
+              <PhotoSlot
                 file={groupPhoto}
                 onPick={(file) => setCropping({ file, rowId: null })}
-                shape="rounded"
-                name={newGroupName}
+                shape="square"
+                label={`Add a photo for ${newGroupName}`}
               />
             )}
           </div>
@@ -197,10 +197,10 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
           {rows.map((row) => (
             <div key={row.id} className="flex items-center gap-2">
               {row.newName ? (
-                <PhotoButton
+                <PhotoSlot
                   file={row.photo}
                   onPick={(file) => setCropping({ file, rowId: row.id })}
-                  name={row.newName}
+                  label={`Add a photo of ${row.newName}`}
                 />
               ) : (
                 <Avatar
@@ -278,42 +278,3 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
   );
 }
 
-// Square photo slot for something not saved yet: shows the picked photo or
-// an "add photo" affordance.
-function PhotoButton({
-  file,
-  onPick,
-  name,
-  shape = "circle",
-}: {
-  file: File | null;
-  onPick: (file: File) => void;
-  name: string;
-  shape?: "circle" | "rounded";
-}) {
-  const preview = useObjectUrl(file);
-  return (
-    <label
-      className={`relative flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden border border-dashed border-border-strong bg-surface-2 text-muted hover:text-text ${
-        shape === "circle" ? "rounded-full" : "rounded-md"
-      }`}
-      title={file ? "Change photo" : `Add a photo for ${name}`}
-    >
-      {preview ? (
-        <img src={preview} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <ImageUp size={17} />
-      )}
-      <input
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          const picked = e.target.files?.[0];
-          if (picked) onPick(picked);
-          e.target.value = "";
-        }}
-      />
-    </label>
-  );
-}

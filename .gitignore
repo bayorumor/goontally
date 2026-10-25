@@ -46,3 +46,6 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 AGENTS.md
+
+# database backups written by scripts
+/backups/
