@@ -9,6 +9,7 @@ import * as person from "./routes/person";
 import * as group from "./routes/group";
 import * as add from "./routes/add";
 import * as history from "./routes/history";
+import * as insights from "./routes/insights";
 
 // Same paths as the web app, so shared components link to the right place.
 // Each route's loader stands in for the web page's server code: it reads
@@ -36,7 +37,7 @@ export const createRouter = () =>
             { path: "history", ...history },
             // Old links to the log page open the quick-log sheet on Home.
             { path: "log", loader: () => redirect("/?log=1") },
-            { path: "insights", element: <Placeholder title="Insights" /> },
+            { path: "insights", ...insights },
             { path: "profile", element: <Placeholder title="Settings" /> },
             { path: "*", loader: () => notFound() },
           ],

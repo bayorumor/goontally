@@ -2,48 +2,21 @@ import "server-only";
 import { prisma } from "./prisma";
 import { localDateParts } from "./timezone";
 import { Person } from "./types";
+import {
+  DAY_MS,
+  HEATMAP_DAYS,
+  MIN_COMEBACK_DAYS,
+  MIN_FORGOTTEN_DAYS,
+  TOP_PERSONS,
+  type Stats,
+} from "./insights";
 
-export interface Stats {
-  totalEntries: number;
-  totalPersons: number;
-  topPersons: { person: Person; count: number }[];
-  thoughtBreakdown: { tag: string; count: number }[];
-  mediumBreakdown: { tag: string; count: number }[];
-  heatmapData: { date: string; count: number }[];
-  timeOfDay: { hour: number; count: number }[];
-  mostLoyal: { person: Person; months: number } | null;
-  hyperfixation: { person: Person; count: number; increase: number } | null;
-  // Logged this month after the longest gap since their previous entry.
-  comeback: { person: Person; days: number } | null;
-  // Most consecutive local days with at least one entry, all time.
-  longestStreak: { person: Person; days: number } | null;
-  // A former top-10 person who hasn't been logged in the longest time.
-  forgottenFavorite: { person: Person; days: number } | null;
-  // Most different finishes (thought tags) aimed at one person.
-  mostVariety: { person: Person; count: number } | null;
-  topGroups: {
-    id: number;
-    name: string;
-    photoUrl: string | null;
-    count: number;
-  }[];
-  newThisMonth: Person[];
-  // Exact sets of 2+ persons logged together, most entries first.
-  topPairings: { persons: Person[]; count: number }[];
-}
-
-// The heatmap shows as many weeks as fit its width, up to a year.
-const HEATMAP_DAYS = 371;
-// Shorter gaps than this aren't much of a comeback.
-const MIN_COMEBACK_DAYS = 14;
-// A favorite counts as forgotten after this long without a log.
-const MIN_FORGOTTEN_DAYS = 30;
-const DAY_MS = 24 * 60 * 60 * 1000;
-// 10 rows of Top persons line up with the 5 Top groups rows beside it.
-const TOP_PERSONS = 10;
+export type { Stats };
 
 // All aggregation happens in Postgres. Entry.loggedAt is stored as UTC, so
 // day/month/hour buckets convert it to the viewer's timezone first.
+// lib/insights.ts works out the same numbers in JavaScript for the Android
+// app; keep the two in step.
 export async function getStats(
   userId: number,
   tz: string,
