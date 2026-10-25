@@ -20,7 +20,7 @@ export default function PhotoUploader({
   endpoint,
   field = "photo",
   aspect,
-  title = "Change photo",
+  title = "Change image",
 }: Props) {
   const router = useRouter();
   const { toast } = useFeedback();
@@ -35,11 +35,11 @@ export default function PhotoUploader({
       formData.append(field, cropped);
       const res = await fetch(endpoint, { method: "PATCH", body: formData });
       if (res.ok) {
-        toast("Photo updated");
+        toast("Image updated");
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        toast(data.error || "Couldn't upload the photo", "error");
+        toast(data.error || "Couldn't upload the image", "error");
       }
     } catch {
       toast("Couldn't upload. Check your connection.", "error");

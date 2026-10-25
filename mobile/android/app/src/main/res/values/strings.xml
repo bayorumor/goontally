@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Goontally</string>
-    <string name="title_activity_main">Goontally</string>
+    <!-- "GT" rather than the full name, so the home screen, app drawer and
+         recent apps stay discreet. -->
+    <string name="app_name">GT</string>
+    <string name="title_activity_main">GT</string>
     <string name="package_name">app.goontally</string>
     <string name="custom_url_scheme">app.goontally</string>
 </resources>

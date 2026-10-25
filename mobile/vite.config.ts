@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import pkg from "./package.json" with { type: "json" };
 
 // The Android app's web layer. It reuses the web app's components from the
 // repo root; the next/* imports in them are pointed at small react-router
@@ -10,6 +11,9 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // The app's version, from package.json: shown in Settings and compared
+  // with the newest release by the update check.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   resolve: {
     alias: [
       { find: /^next\/link$/, replacement: here("src/shims/next-link.tsx") },

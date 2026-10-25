@@ -4,7 +4,9 @@ const config: CapacitorConfig = {
   // The app's permanent identity on Android; it can't change after the
   // first release, or phones see it as a different app.
   appId: "app.goontally",
-  appName: "Goontally",
+  // Shown under the icon. Kept short and discreet; Android reads it from
+  // android/app/src/main/res/values/strings.xml, which matches.
+  appName: "GT",
   // Vite's build output, copied into the APK by `cap sync`.
   webDir: "dist",
   // Shown behind the page while it loads: the Plum background.

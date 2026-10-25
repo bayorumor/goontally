@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
-import { titleCase } from "@/lib/format";
 import { NAME_MAX } from "@/lib/constants";
 import { Person } from "@/lib/types";
 
@@ -70,7 +69,7 @@ export default function PersonPicker({
                 className="inline-flex h-9 items-center gap-2 rounded-full bg-primary-soft pl-1 pr-1.5 text-[14px] font-medium text-primary-text"
               >
                 <Avatar src={p.person?.photoUrl} name={name} size={28} />
-                {titleCase(name)}
+                {name}
                 {!p.person && (
                   <span className="text-[11px] font-semibold uppercase opacity-70">
                     new
@@ -127,7 +126,7 @@ export default function PersonPicker({
               <Avatar src={p.photoUrl} name={p.name} size={34} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-medium">
-                  {titleCase(p.name)}
+                  {p.name}
                 </span>
                 <span className="block truncate text-[12px] text-muted">
                   {p.groups.length

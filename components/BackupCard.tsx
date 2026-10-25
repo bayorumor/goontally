@@ -80,13 +80,13 @@ function ExportRow() {
         includePhotos,
         password,
         onPhotos: (done, total) =>
-          setStatus(total ? `Fetching photos ${done}/${total}…` : "Packing…"),
+          setStatus(total ? `Fetching images ${done}/${total}…` : "Packing…"),
       });
       if (!(await saveFile(file, filename))) return;
       setOpen(false);
       toast(
         missingPhotos
-          ? `Backup saved, but ${plural(missingPhotos, "photo")} couldn't be fetched`
+          ? `Backup saved, but ${plural(missingPhotos, "image")} couldn't be fetched`
           : "Backup saved",
         missingPhotos ? "error" : "info",
       );
@@ -134,7 +134,7 @@ function ExportRow() {
                 aria-pressed={includePhotos}
                 onClick={() => setIncludePhotos(true)}
               >
-                Data + photos
+                Data + images
               </button>
               <button
                 type="button"
@@ -246,7 +246,7 @@ function ImportRow({ anyFile }: { anyFile: boolean }) {
     setStatus("Importing…");
     try {
       const result = await restoreBackup(backup, mode, (done, total) => {
-        if (total) setStatus(`Uploading photos ${done}/${total}…`);
+        if (total) setStatus(`Adding images ${done}/${total}…`);
       });
       setStep(null);
       router.refresh();
@@ -258,7 +258,7 @@ function ImportRow({ anyFile }: { anyFile: boolean }) {
       ];
       toast(
         failedPhotos
-          ? `Imported, but ${plural(failedPhotos, "photo")} failed to upload`
+          ? `Imported, but ${plural(failedPhotos, "image")} couldn't be added`
           : `Added ${parts.join(", ")}${skippedEntries ? ` (${skippedEntries} already there)` : ""}`,
         failedPhotos ? "error" : "info",
       );
@@ -376,7 +376,7 @@ function Summary({
     ["Persons", counts.persons],
     ["Groups", counts.groups],
     ["Entries", counts.entries],
-    ["Photos", backup.photos.size],
+    ["Images", backup.photos.size],
   ] as const;
 
   return (
@@ -422,7 +422,7 @@ function Summary({
         <p className="mt-2 text-[13px] text-subtle">
           {mode === "merge"
             ? "Adds what's missing. Persons and groups with the same name count as the same, and entries already here are skipped."
-            : "Deletes everything in your account first, then imports the backup. Use this for a fresh start."}
+            : "Deletes everything here first, then imports the backup. Use this for a fresh start."}
         </p>
       </div>
     </div>

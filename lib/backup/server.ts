@@ -42,7 +42,7 @@ export async function exportRows(userId: number): Promise<BackupData> {
     }),
     prisma.userCustomOption.findMany({
       where: { userId },
-      select: { category: true, label: true, createdAt: true },
+      select: { category: true, label: true, hidden: true, createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
   ]);
@@ -71,7 +71,14 @@ export async function exportRows(userId: number): Promise<BackupData> {
     })),
     options: options.flatMap((o) =>
       o.category === "thought" || o.category === "medium"
-        ? [{ category: o.category, label: o.label, createdAt: o.createdAt.toISOString() }]
+        ? [
+            {
+              category: o.category,
+              label: o.label,
+              hidden: o.hidden,
+              createdAt: o.createdAt.toISOString(),
+            },
+          ]
         : [],
     ),
   };
@@ -218,6 +225,7 @@ export async function importRows(
           userId,
           category: o.category,
           label: o.label,
+          hidden: o.hidden ?? false,
           createdAt: new Date(o.createdAt),
         })),
         skipDuplicates: true,

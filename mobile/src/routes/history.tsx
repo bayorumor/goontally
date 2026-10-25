@@ -1,11 +1,10 @@
 import { useLoaderData } from "react-router";
 import HistoryList from "@/components/HistoryList";
+import { HISTORY_PAGE_SIZE } from "@/lib/entryPages";
 import { listEntries } from "../local/queries";
 import { timeZone } from "./util";
 
-const PAGE_SIZE = 30;
-
-export const loader = () => listEntries({ limit: PAGE_SIZE });
+export const loader = () => listEntries({ limit: HISTORY_PAGE_SIZE });
 
 export function Component() {
   const { entries, total } = useLoaderData<typeof loader>();
@@ -13,7 +12,7 @@ export function Component() {
     <HistoryList
       initialEntries={entries}
       total={total}
-      pageSize={PAGE_SIZE}
+      pageSize={HISTORY_PAGE_SIZE}
       timeZone={timeZone()}
     />
   );

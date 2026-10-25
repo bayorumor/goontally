@@ -13,3 +13,13 @@
   --font-rubik: "Rubik Variable";
   --font-geom: "Geom Variable";
 }
+
+/* No scroll bars on the phone: Android apps scroll by touch without one,
+   and the WebView's bar would draw over the top bar and the bottom nav.
+   Scrolling itself is unchanged. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}

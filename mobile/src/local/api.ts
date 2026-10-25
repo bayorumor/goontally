@@ -5,18 +5,23 @@ import {
   getImageFile,
   nameField,
   optionBody,
+  optionRemoveBody,
+  optionRenameBody,
   readPhotos,
   validateImage,
 } from "@/lib/schemas";
+import { parseId } from "@/lib/ids";
 import { exportRows } from "./backup";
 import { db, type Tx } from "./db";
 import { deletePhoto, savePhoto, type PhotoKind } from "./photos";
 import {
-  listEntries,
-  listGroupRefs,
-  listOptionLabels,
-  listPersonsForPicker,
-} from "./queries";
+  addOption,
+  listLogOptions,
+  listOptions,
+  removeOption,
+  renameOption,
+} from "./options";
+import { listEntries, listGroupRefs, listPersonsForPicker } from "./queries";
 
 // The phone's stand-in for app/api: the shared components keep calling
 // fetch("/api/..."), and this answers from SQLite instead of a server. Same
@@ -37,13 +42,6 @@ class Rejected extends Error {
   constructor(readonly response: Response) {
     super("rejected");
   }
-}
-
-// Positive integer id from a route param, or null.
-function parseId(value: string | null | undefined): number | null {
-  if (!value || !/^\d+$/.test(value)) return null;
-  const n = Number(value);
-  return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
 const now = () => new Date().toISOString();
@@ -197,7 +195,7 @@ const addPersons: Handler = async (req) => {
     {
       groupId,
       ...(photoFailed
-        ? { warning: "Saved, but some photos failed to upload" }
+        ? { warning: "Saved, but some images couldn't be saved" }
         : {}),
     },
     201,
@@ -245,7 +243,7 @@ const updateNamed =
       try {
         photo = await savePhoto(file, kind);
       } catch {
-        return jsonError("Couldn't save the photo, please try again", 500);
+        return jsonError("Couldn't save the image, please try again", 500);
       }
     }
 
@@ -323,6 +321,21 @@ const deleteGroup: Handler = async (_req, { id: rawId }) => {
   await db.run("DELETE FROM groups WHERE id = ?", [id]);
   await deletePhoto(group.photo);
   return json({ message: "Group deleted" });
+};
+
+// DELETE /api/groups/:id/members/:personId: both stay in the library.
+const removeMember: Handler = async (_req, { id: rawId, personId: rawPerson }) => {
+  const groupId = parseId(rawId);
+  const personId = parseId(rawPerson);
+  const { changes } =
+    groupId && personId
+      ? await db.run(
+          "DELETE FROM memberships WHERE groupId = ? AND personId = ?",
+          [groupId, personId],
+        )
+      : { changes: 0 };
+  if (!changes) return jsonError("Member not found", 404);
+  return json({ message: "Removed from the group" });
 };
 
 // GET /api/entries: a page of entries, for "Load more".
@@ -476,7 +489,7 @@ const saveEntry =
       {
         entry: saved,
         ...(photoFailed
-          ? { warning: "Saved, but some photos failed to upload" }
+          ? { warning: "Saved, but some images couldn't be saved" }
           : {}),
       },
       mode === "create" ? 201 : 200,
@@ -498,39 +511,49 @@ const getLogData: Handler = async () => {
   const [persons, groups, thoughtOptions, mediumOptions] = await Promise.all([
     listPersonsForPicker(),
     listGroupRefs(),
-    listOptionLabels("thought"),
-    listOptionLabels("medium"),
+    listLogOptions("thought"),
+    listLogOptions("medium"),
   ]);
   return json({ persons, groups, thoughtOptions, mediumOptions });
 };
 
+// GET /api/options: every offered finish and medium, with their uses.
+const getOptions: Handler = async () => json(await listOptions());
+
 // POST /api/options: saves a custom finish or medium for next time. Adding
 // one that exists is a no-op rather than an error.
-const addOption: Handler = async (req) => {
+const postOption: Handler = async (req) => {
   const parsed = optionBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
     return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
   const { category, label } = parsed.data;
-  const at = now();
-  await db.run(
-    "INSERT OR IGNORE INTO customOptions (category, label, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
-    [category, label, at, at],
-  );
-  const option = await db.get(
-    "SELECT id, category, label, createdAt, updatedAt FROM customOptions WHERE category = ? AND label = ?",
-    [category, label],
-  );
-  return json({ option }, 201);
+  await addOption(category, label);
+  return json({ option: { category, label } }, 201);
 };
 
-// DELETE /api/options/:id
-const deleteOption: Handler = async (_req, { id: rawId }) => {
-  const id = parseId(rawId);
-  const { changes } = id
-    ? await db.run("DELETE FROM customOptions WHERE id = ?", [id])
-    : { changes: 0 };
-  if (!changes) return jsonError("Option not found", 404);
-  return json({ message: "Option deleted" });
+// PATCH /api/options: renames an option, in past entries too.
+const patchOption: Handler = async (req) => {
+  const parsed = optionRenameBody.safeParse(
+    await req.json().catch(() => null),
+  );
+  if (!parsed.success)
+    return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
+  const { category, from, to } = parsed.data;
+  await renameOption(category, from, to);
+  return json({ ok: true });
+};
+
+// DELETE /api/options: stops offering an option, and with fromEntries
+// takes it off past entries.
+const deleteOption: Handler = async (req) => {
+  const parsed = optionRemoveBody.safeParse(
+    await req.json().catch(() => null),
+  );
+  if (!parsed.success)
+    return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
+  const { category, label, fromEntries } = parsed.data;
+  await removeOption(category, label, fromEntries);
+  return json({ ok: true });
 };
 
 // GET /api/backup: every row, for the backup packer. Restoring skips the
@@ -543,13 +566,20 @@ const ROUTES: [method: string, path: RegExp, handler: Handler][] = [
   ["DELETE", /^\/api\/persons\/(?<id>[^/]+)$/, deletePerson],
   ["PATCH", /^\/api\/groups\/(?<id>[^/]+)$/, updateNamed("group")],
   ["DELETE", /^\/api\/groups\/(?<id>[^/]+)$/, deleteGroup],
+  [
+    "DELETE",
+    /^\/api\/groups\/(?<id>[^/]+)\/members\/(?<personId>[^/]+)$/,
+    removeMember,
+  ],
   ["GET", /^\/api\/entries$/, getEntries],
   ["POST", /^\/api\/entries$/, saveEntry("create")],
   ["PATCH", /^\/api\/entries\/(?<id>[^/]+)$/, saveEntry("edit")],
   ["DELETE", /^\/api\/entries\/(?<id>[^/]+)$/, deleteEntry],
   ["GET", /^\/api\/log-data$/, getLogData],
-  ["POST", /^\/api\/options$/, addOption],
-  ["DELETE", /^\/api\/options\/(?<id>[^/]+)$/, deleteOption],
+  ["GET", /^\/api\/options$/, getOptions],
+  ["POST", /^\/api\/options$/, postOption],
+  ["PATCH", /^\/api\/options$/, patchOption],
+  ["DELETE", /^\/api\/options$/, deleteOption],
   ["GET", /^\/api\/backup$/, getBackup],
 ];
 

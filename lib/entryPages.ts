@@ -1,5 +1,10 @@
 import { Entry } from "./types";
 
+// Entries per page: History, and a person's entry history. Shared by the web
+// pages, the Android routes and the "Load more" buttons.
+export const HISTORY_PAGE_SIZE = 30;
+export const PERSON_PAGE_SIZE = 20;
+
 // The page of entries after `last` (newest first), for "Load more" buttons.
 // Throws when the request fails.
 export async function fetchEntriesAfter(

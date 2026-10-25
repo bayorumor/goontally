@@ -6,7 +6,7 @@ import { Person } from "@/lib/types";
 // highlights never leaves a lone card on its own row.
 export const CARD_GRID = "grid grid-cols-3 gap-2 md:grid-cols-6 md:gap-3";
 
-// Responsive grid of person cards: two columns on phones, more as it widens.
+// Grid of person cards, laid out by CARD_GRID.
 export default function PersonGrid({
   persons,
   showCount = true,

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PERSON_ASPECT, thumb } from "@/lib/image";
-import { relativeDay, titleCase } from "@/lib/format";
+import { relativeDay } from "@/lib/format";
 import PhotoUploader from "@/components/PhotoUploader";
 import DeleteButton from "@/components/DeleteButton";
 import RenameButton from "@/components/RenameButton";
@@ -41,7 +41,7 @@ export default function PersonView({
             />
           ) : (
             <div className="flex aspect-[11/16] w-full items-center justify-center rounded-lg border border-border bg-surface-1 text-[44px] font-bold text-subtle">
-              {titleCase(person.name).charAt(0)}
+              {person.name.charAt(0).toUpperCase()}
             </div>
           )}
           <PhotoUploader
@@ -54,7 +54,7 @@ export default function PersonView({
           <div>
             <div className="flex items-center gap-1">
               <h1 className="truncate text-[28px] font-bold tracking-tight">
-                {titleCase(person.name)}
+                {person.name}
               </h1>
               <RenameButton
                 endpoint={`/api/persons/${person.id}`}
@@ -97,7 +97,7 @@ export default function PersonView({
             <LogButton label="Log again" person={person} />
             <DeleteButton
               endpoint={`/api/persons/${person.id}`}
-              confirmTitle={`Delete ${titleCase(person.name)}?`}
+              confirmTitle={`Delete ${person.name}?`}
               confirmMessage="Their entries are removed too, unless someone else is in them. This can't be undone."
               redirectTo="/library"
               label="Delete"

@@ -1,5 +1,6 @@
 import { Outlet, ScrollRestoration } from "react-router";
 import TopNav from "@/components/TopNav";
+import UpdateBanner from "../components/UpdateBanner";
 import BottomNav from "@/components/BottomNav";
 import { FeedbackProvider } from "@/components/ui/Feedback";
 import { QuickLogProvider } from "@/components/log/QuickLog";
@@ -12,7 +13,8 @@ export default function AppLayout() {
     <FeedbackProvider>
       <QuickLogProvider>
         <OpenLogFromQuery />
-        <TopNav user={{ username: "Goontally", avatar: null }} />
+        <TopNav />
+        <UpdateBanner />
         <main className="mx-auto w-full max-w-6xl px-4 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+32px)] pt-5 md:px-6 md:pb-16 md:pt-8">
           <Outlet />
         </main>

@@ -12,7 +12,12 @@ export async function PATCH(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return unauthorized();
 
-  const formData = await req.formData();
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return jsonError("Invalid request body", 400);
+  }
   const photo = getImageFile(formData.get("avatar"));
 
   if (!photo) return jsonError("Avatar image is required", 400);
@@ -23,7 +28,7 @@ export async function PATCH(req: NextRequest) {
   try {
     avatar = await uploadImage(photo, "user");
   } catch {
-    return jsonError("Couldn't upload the photo, please try again", 502);
+    return jsonError("Couldn't upload the image, please try again", 502);
   }
 
   const before = await prisma.user.findUniqueOrThrow({

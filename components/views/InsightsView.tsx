@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Stats } from "@/lib/insights";
 import { localDateParts } from "@/lib/timezone";
-import { titleCase } from "@/lib/format";
 import { Person } from "@/lib/types";
 import Avatar from "@/components/ui/Avatar";
 import PersonCard from "@/components/PersonCard";
@@ -86,7 +85,7 @@ const joinNames = (names: string[]) =>
 // items would leave a lone pair in a three-column grid).
 function PairingGrid({ items }: { items: Stats["topPairings"] }) {
   const names = (item: Stats["topPairings"][number]) =>
-    joinNames(item.persons.map((p) => titleCase(p.name)));
+    joinNames(item.persons.map((p) => p.name));
   const meta = (item: Stats["topPairings"][number], i: number) => (
     <>
       <span
@@ -296,7 +295,7 @@ export default function InsightsView({
                       name={t.person.name}
                       size={22}
                     />
-                    <span className="truncate">{titleCase(t.person.name)}</span>
+                    <span className="truncate">{t.person.name}</span>
                   </Link>
                 ),
               }))}
@@ -325,7 +324,7 @@ export default function InsightsView({
                       shape="rounded"
                     />
                     <span className="min-w-0 flex-1 truncate text-[16px] font-medium">
-                      {titleCase(g.name)}
+                      {g.name}
                     </span>
                     <span className="text-[13px] tabular-nums text-muted">
                       {g.count}

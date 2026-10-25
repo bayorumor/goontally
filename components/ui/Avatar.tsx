@@ -1,11 +1,10 @@
 import { thumb } from "@/lib/image";
-import { titleCase } from "@/lib/format";
 
 interface Props {
   src: string | null | undefined;
   name: string;
   size: number;
-  // circle: people/avatars, rounded: groups in lists, portrait: person cards.
+  // circle: people/avatars, rounded: groups in lists.
   shape?: "circle" | "rounded";
   className?: string;
   // Extra inline styles, e.g. absolute positioning inside an AvatarCluster.
@@ -42,7 +41,7 @@ export default function Avatar({
           decoding="async"
         />
       ) : (
-        titleCase(name).charAt(0) || "?"
+        name.charAt(0).toUpperCase() || "?"
       )}
     </span>
   );

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Person } from "@/lib/types";
 import { thumb } from "@/lib/image";
-import { titleCase } from "@/lib/format";
 
 interface Props {
   person: Person & { entryCount?: number };
@@ -34,7 +33,7 @@ export default function PersonCard({
         />
       ) : (
         <span className="absolute inset-0 flex items-center justify-center bg-surface-2 text-[32px] font-bold text-subtle">
-          {titleCase(person.name).charAt(0)}
+          {person.name.charAt(0).toUpperCase()}
         </span>
       )}
 
@@ -46,7 +45,7 @@ export default function PersonCard({
 
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2 pb-1.5 pt-8 sm:px-2.5 sm:pb-2">
         <span className="block truncate font-display text-[13px] font-semibold text-white sm:text-[14px]">
-          {titleCase(person.name)}
+          {person.name}
         </span>
         {showGroups && (
           <span className="block truncate text-[10px] font-medium text-white/65 sm:text-[11px]">

@@ -84,7 +84,7 @@ export default function AutoBackupCard({ settings }: { settings: AutoBackup }) {
               aria-pressed={settings.includePhotos}
               onClick={() => save({ includePhotos: true })}
             >
-              Data + photos
+              Data + images
             </button>
             <button
               type="button"

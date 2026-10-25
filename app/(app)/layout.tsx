@@ -8,6 +8,7 @@ import TimezoneCookie from "@/components/TimezoneCookie";
 import { FeedbackProvider } from "@/components/ui/Feedback";
 import { QuickLogProvider } from "@/components/log/QuickLog";
 import OpenLogFromQuery from "@/components/log/OpenLogFromQuery";
+import TermsGate from "@/components/terms/TermsGate";
 
 export default async function AppLayout({
   children,
@@ -37,6 +38,8 @@ export default async function AppLayout({
           {children}
         </main>
         <BottomNav />
+        {/* Asked once per account, before the app is used. */}
+        <TermsGate needed={!!user && !user.termsAcceptedAt} />
       </QuickLogProvider>
     </FeedbackProvider>
   );

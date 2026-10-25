@@ -1,5 +1,6 @@
 import { useLoaderData, type LoaderFunctionArgs } from "react-router";
 import PersonView from "@/components/views/PersonView";
+import { PERSON_PAGE_SIZE } from "@/lib/entryPages";
 import { getPerson, listEntries } from "../local/queries";
 import { notFound, parseId, timeZone } from "./util";
 
@@ -8,7 +9,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!personId) notFound();
   const [person, { entries, total }] = await Promise.all([
     getPerson(personId),
-    listEntries({ personId, limit: 20 }),
+    listEntries({ personId, limit: PERSON_PAGE_SIZE }),
   ]);
   if (!person) notFound();
   return { person, entries, total };

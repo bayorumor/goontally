@@ -65,6 +65,8 @@ export const backupDataSchema = z.object({
       z.object({
         category: z.enum(["thought", "medium"]),
         label,
+        // No longer offered when logging. Missing in older backups.
+        hidden: z.boolean().optional(),
         createdAt: time,
       }),
     )

@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId, unauthorized } from "@/lib/api";
-import {
-  listGroupRefs,
-  listOptionLabels,
-  listPersonsForPicker,
-} from "@/lib/queries";
+import { listGroupRefs, listPersonsForPicker } from "@/lib/queries";
+import { listLogOptions } from "@/lib/customOptions";
 
 // Everything the quick-log sheet needs, loaded when it opens.
 export async function GET() {
@@ -14,8 +11,8 @@ export async function GET() {
   const [persons, groups, thoughtOptions, mediumOptions] = await Promise.all([
     listPersonsForPicker(userId),
     listGroupRefs(userId),
-    listOptionLabels(userId, "thought"),
-    listOptionLabels(userId, "medium"),
+    listLogOptions(userId, "thought"),
+    listLogOptions(userId, "medium"),
   ]);
 
   return NextResponse.json({ persons, groups, thoughtOptions, mediumOptions });

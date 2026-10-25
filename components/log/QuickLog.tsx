@@ -14,18 +14,18 @@ import Sheet from "@/components/ui/Sheet";
 import { useFeedback } from "@/components/ui/Feedback";
 import PhotoCropperModal from "@/components/PhotoCropperModal";
 import PhotoSlot from "@/components/ui/PhotoSlot";
-import { DEFAULT_MEDIUMS } from "@/lib/constants";
-import { titleCase } from "@/lib/format";
 import { PERSON_ASPECT, SQUARE_ASPECT } from "@/lib/image";
 import { DraftThought, Entry, Group, Person } from "@/lib/types";
 import GroupSelect from "./GroupSelect";
 import PersonPicker, { PickedPerson } from "./PersonPicker";
 import TagPicker from "./TagPicker";
 import ThoughtSelect from "./ThoughtSelect";
+import OptionsSheet from "@/components/options/OptionsSheet";
 
 interface LogData {
   persons: Person[];
   groups: Group[];
+  // What's offered, built-in ones included (lib/options.ts).
   thoughtOptions: string[];
   mediumOptions: string[];
 }
@@ -78,6 +78,7 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
   const [showThoughtErrors, setShowThoughtErrors] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+  const [editingOptions, setEditingOptions] = useState(false);
   const [cropping, setCropping] = useState<{
     key: string;
     file: File;
@@ -293,7 +294,7 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
         <PhotoCropperModal
           file={cropping.file}
           aspect={cropping.target === "group" ? SQUARE_ASPECT : PERSON_ASPECT}
-          confirmLabel="Use photo"
+          confirmLabel="Use image"
           onConfirm={(file) => {
             updateExtras(
               cropping.key,
@@ -367,19 +368,19 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                         onPick={(file) =>
                           setCropping({ key: p.key, file, target: "person" })
                         }
-                        label={`Add a photo of ${titleCase(p.newName)}`}
+                        label={`Add an image of ${p.newName}`}
                       />
                       <div className="min-w-0">
                         <p className="text-[13px] text-muted">
                           New person ·{" "}
                           <span className="font-semibold text-text">
-                            {titleCase(p.newName)}
+                            {p.newName}
                           </span>
                         </p>
                         <p className="text-[12px] text-subtle">
                           {x.photo
-                            ? "Tap the photo to change it"
-                            : "Tap the frame to add their photo (optional)"}
+                            ? "Tap the image to change it"
+                            : "Tap the frame to add an image (optional)"}
                         </p>
                       </div>
                     </div>
@@ -415,7 +416,7 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                           onPick={(file) =>
                             setCropping({ key: p.key, file, target: "group" })
                           }
-                          label={`Add a logo for ${titleCase(x.newGroupName)}`}
+                          label={`Add a logo for ${x.newGroupName}`}
                         />
                       )}
                     </div>
@@ -461,7 +462,9 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
               {showDetails && (
                 <>
                   <div>
-                    <p className="label">Where did you finish?</p>
+                    <OptionsLabel onEdit={() => setEditingOptions(true)}>
+                      Where did you finish?
+                    </OptionsLabel>
                     <ThoughtSelect
                       thoughts={thoughts}
                       onChange={setThoughts}
@@ -469,16 +472,17 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
                         key: p.key,
                         name: p.person?.name ?? p.newName,
                       }))}
-                      customOptions={data.thoughtOptions}
+                      options={data.thoughtOptions}
                       onAddCustom={(label) => addOption("thought", label)}
                       showErrors={showThoughtErrors}
                     />
                   </div>
                   <div>
-                    <p className="label">What did you use?</p>
+                    <OptionsLabel onEdit={() => setEditingOptions(true)}>
+                      What did you use?
+                    </OptionsLabel>
                     <TagPicker
-                      defaults={DEFAULT_MEDIUMS}
-                      custom={data.mediumOptions}
+                      options={data.mediumOptions}
                       selected={mediumTags}
                       onToggle={(label) =>
                         setMediumTags((prev) =>
@@ -510,6 +514,37 @@ export function QuickLogProvider({ children }: { children: ReactNode }) {
           </div>
         )}
       </Sheet>
+
+      {/* Over the log sheet; the lists are reloaded once it closes. */}
+      <OptionsSheet
+        open={editingOptions}
+        onClose={() => {
+          setEditingOptions(false);
+          loadData();
+        }}
+      />
     </QuickLogContext.Provider>
+  );
+}
+
+// A details label with an "Edit" link to the finish and medium list.
+function OptionsLabel({
+  children,
+  onEdit,
+}: {
+  children: ReactNode;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="mb-2 flex items-baseline justify-between gap-3">
+      <p className="label !mb-0">{children}</p>
+      <button
+        type="button"
+        className="text-[13px] font-medium text-muted hover:text-text"
+        onClick={onEdit}
+      >
+        Edit
+      </button>
+    </div>
   );
 }

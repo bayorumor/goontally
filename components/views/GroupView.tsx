@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
 import { SQUARE_ASPECT, thumb } from "@/lib/image";
-import { titleCase } from "@/lib/format";
 import PersonGrid from "@/components/PersonGrid";
 import PhotoUploader from "@/components/PhotoUploader";
 import DeleteButton from "@/components/DeleteButton";
 import RenameButton from "@/components/RenameButton";
+import RemoveMembersButton from "@/components/RemoveMembersButton";
 import BackLink from "@/components/BackLink";
 import AmbientBackdrop from "@/components/AmbientBackdrop";
 import Stat from "@/components/ui/Stat";
@@ -34,7 +34,7 @@ export default function GroupView({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center rounded-xl border border-border bg-surface-1 text-[44px] font-bold text-subtle">
-              {titleCase(group.name).charAt(0)}
+              {group.name.charAt(0).toUpperCase()}
             </div>
           )}
           <PhotoUploader
@@ -46,7 +46,7 @@ export default function GroupView({
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex items-center gap-1">
             <h1 className="truncate text-[28px] font-bold tracking-tight">
-              {titleCase(group.name)}
+              {group.name}
             </h1>
             <RenameButton
               endpoint={`/api/groups/${group.id}`}
@@ -62,7 +62,7 @@ export default function GroupView({
             />
             <Stat value={stats.totalEntries} label="Entries" />
             <Stat
-              value={stats.topPerson ? titleCase(stats.topPerson.name) : "—"}
+              value={stats.topPerson ? stats.topPerson.name : "—"}
               label="Top person"
             />
           </div>
@@ -71,9 +71,12 @@ export default function GroupView({
             <Link href={`/add?group=${group.id}`} className="btn btn-secondary">
               <UserRoundPlus size={17} /> Add members
             </Link>
+            {group.persons.length > 0 && (
+              <RemoveMembersButton groupId={group.id} members={group.persons} />
+            )}
             <DeleteButton
               endpoint={`/api/groups/${group.id}`}
-              confirmTitle={`Delete ${titleCase(group.name)}?`}
+              confirmTitle={`Delete ${group.name}?`}
               confirmMessage="Members stay in your library; only the group goes away."
               redirectTo="/library?tab=groups"
               label="Delete"

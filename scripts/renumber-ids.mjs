@@ -42,7 +42,7 @@ SELECT md5(string_agg(x, E'\\n' ORDER BY x)) AS h, count(*)::int AS n FROM (
                    FROM "EntryThought" t WHERE t."entryId" = e.id), '')
   FROM "Entry" e
   UNION ALL
-  SELECT 'O|' || o."userId" || '|' || o.category || '|' || o.label FROM "UserCustomOption" o
+  SELECT 'O|' || o."userId" || '|' || o.category || '|' || o.label || '|' || o.hidden FROM "UserCustomOption" o
 ) s`;
 
 const db = new pg.Client({

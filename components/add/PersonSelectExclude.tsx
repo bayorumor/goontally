@@ -1,7 +1,6 @@
 "use client";
 
 import Combobox from "@/components/Combobox";
-import { titleCase } from "@/lib/format";
 import { Person } from "@/lib/types";
 
 interface Props {
@@ -46,9 +45,9 @@ export default function PersonSelectExclude({
         const match = allPersons.find((p) => p.name.toLowerCase() === q);
         if (!match) return null;
         if (inGroup(match))
-          return `${titleCase(match.name)} is already in this group`;
+          return `${match.name} is already in this group`;
         if (!allowExisting)
-          return `${titleCase(match.name)} is already in your library`;
+          return `${match.name} is already in your library`;
         return null;
       }}
       emptyMessage={(q) => {

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
-import { titleCase } from "@/lib/format";
 import { NAME_MAX } from "@/lib/constants";
 
 export interface ComboboxItem {
@@ -68,7 +67,7 @@ export default function Combobox<T extends ComboboxItem>({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const query = draft ?? (value ? titleCase(value.name) : "");
+  const query = draft ?? (value ? value.name : "");
   const q = query.trim().toLowerCase();
 
   const visible = sections
@@ -148,7 +147,7 @@ export default function Combobox<T extends ComboboxItem>({
                   }}
                 >
                   <Avatar src={item.photoUrl} name={item.name} size={26} />
-                  <span className="truncate">{titleCase(item.name)}</span>
+                  <span className="truncate">{item.name}</span>
                 </div>
               ))}
             </div>

@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
+import ClampedChips from "@/components/ui/ClampedChips";
 import { useFeedback } from "@/components/ui/Feedback";
 import { EmptyState, PageHeader } from "@/components/StateViews";
 import LogButton from "@/components/log/LogButton";
 import { useQuickLog } from "@/components/log/QuickLog";
 import { Entry } from "@/lib/types";
 import { fetchEntriesAfter } from "@/lib/entryPages";
-import { titleCase } from "@/lib/format";
 
 // Finish and medium chips are a size smaller on phones, where rows are tight.
 const SMALL_CHIP = "max-md:h-5 max-md:px-2 max-md:text-[11px]";
@@ -82,7 +82,7 @@ export default function HistoryList({
   const handleDelete = async (entry: Entry) => {
     const ok = await confirm({
       title: "Delete this log?",
-      message: `${entry.persons.map((p) => titleCase(p.name)).join(", ")} · ${timeLabel(entry.loggedAt, timeZone)}`,
+      message: `${entry.persons.map((p) => p.name).join(", ")} · ${timeLabel(entry.loggedAt, timeZone)}`,
       confirmLabel: "Delete",
       danger: true,
     });
@@ -178,27 +178,27 @@ export default function HistoryList({
                               href={`/persons/${p.id}`}
                               className="hover:underline"
                             >
-                              {titleCase(p.name)}
+                              {p.name}
                             </Link>
                           </span>
                         ))}
                       </p>
+                      {/* Two lines at most, like the names; "+N" for the rest. */}
                       {(e.thoughts.length > 0 || e.mediumTags.length > 0) && (
-                        <div className="chip-row">
-                          {e.thoughts.map((t) => (
-                            <span
-                              key={t.id}
-                              className={`chip chip--primary ${SMALL_CHIP}`}
-                            >
-                              {t.tag}
-                            </span>
-                          ))}
-                          {e.mediumTags.map((tag) => (
-                            <span key={tag} className={`chip ${SMALL_CHIP}`}>
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
+                        <ClampedChips
+                          chipClassName={SMALL_CHIP}
+                          items={[
+                            ...e.thoughts.map((t) => ({
+                              key: `t${t.id}`,
+                              label: t.tag,
+                              className: "chip--primary",
+                            })),
+                            ...e.mediumTags.map((tag) => ({
+                              key: `m${tag}`,
+                              label: tag,
+                            })),
+                          ]}
+                        />
                       )}
                       {e.notes && (
                         <p className="text-[14px] text-muted">{e.notes}</p>

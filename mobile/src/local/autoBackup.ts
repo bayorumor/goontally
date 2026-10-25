@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { createBackup } from "../shims/backup-client";
-import { db } from "./db";
+import { readSetting, writeSetting } from "./settings";
 import { writeBytes } from "./files";
 
 // Automatic backups: when the app opens or comes back to the front and the
@@ -45,20 +45,11 @@ const INTERVAL_MS: Record<Frequency, number> = {
   weekly: 7 * 24 * 60 * 60 * 1000,
 };
 
-export async function getAutoBackup(): Promise<AutoBackup> {
-  const row = await db.get<{ value: string }>(
-    "SELECT value FROM settings WHERE key = ?",
-    [KEY],
-  );
-  return { ...DEFAULTS, ...(row ? JSON.parse(row.value) : {}) };
-}
+export const getAutoBackup = () => readSetting<AutoBackup>(KEY, DEFAULTS);
 
 export async function saveAutoBackup(patch: Partial<AutoBackup>) {
   const next = { ...(await getAutoBackup()), ...patch };
-  await db.run(
-    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-    [KEY, JSON.stringify(next)],
-  );
+  await writeSetting(KEY, next);
   return next;
 }
 

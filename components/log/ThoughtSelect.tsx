@@ -1,7 +1,5 @@
 "use client";
 
-import { DEFAULT_THOUGHTS } from "@/lib/constants";
-import { titleCase } from "@/lib/format";
 import { DraftThought } from "@/lib/types";
 import TagPicker from "./TagPicker";
 
@@ -14,7 +12,7 @@ interface Props {
   thoughts: DraftThought[];
   onChange: (thoughts: DraftThought[]) => void;
   persons: ThoughtTarget[];
-  customOptions: string[];
+  options: string[];
   onAddCustom: (label: string) => Promise<void>;
   // Set after a save attempt with a thought nobody was picked for.
   showErrors: boolean;
@@ -24,7 +22,7 @@ export default function ThoughtSelect({
   thoughts,
   onChange,
   persons,
-  customOptions,
+  options,
   onAddCustom,
   showErrors,
 }: Props) {
@@ -53,12 +51,11 @@ export default function ThoughtSelect({
   return (
     <div className="flex flex-col gap-3">
       <TagPicker
-        defaults={DEFAULT_THOUGHTS}
-        custom={customOptions}
+        options={options}
         selected={thoughts.map((t) => t.tag)}
         onToggle={toggle}
         onAddCustom={onAddCustom}
-        placeholder="Custom thought"
+        placeholder="Custom finish"
       />
 
       {/* With one person every thought is about them; with several, each
@@ -96,7 +93,7 @@ export default function ThoughtSelect({
                     aria-pressed={thought.keys.includes(p.key)}
                     onClick={() => toggleKey(thought.tag, p.key)}
                   >
-                    {titleCase(p.name)}
+                    {p.name}
                   </button>
                 ))}
               </div>

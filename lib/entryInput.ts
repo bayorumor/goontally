@@ -117,7 +117,7 @@ export async function saveEntry(
   return {
     entry: { id: entry.id, personIds: entry.persons.map((p) => p.personId) },
     ...(photoFailed
-      ? { warning: "Saved, but some photos failed to upload" }
+      ? { warning: "Saved, but some images failed to upload" }
       : {}),
   };
 }

@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { Entry } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
-import { fetchEntriesAfter } from "@/lib/entryPages";
+import { fetchEntriesAfter, PERSON_PAGE_SIZE } from "@/lib/entryPages";
 import { useFeedback } from "@/components/ui/Feedback";
-
-const PAGE_SIZE = 20;
 
 interface Props {
   personId: number;
@@ -41,7 +39,7 @@ export default function PersonEntryList({
     try {
       const data = await fetchEntriesAfter(entries[entries.length - 1], {
         personId,
-        limit: PAGE_SIZE,
+        limit: PERSON_PAGE_SIZE,
       });
       setEntries((prev) => [...prev, ...data.entries]);
       setCount(data.total);

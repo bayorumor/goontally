@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- The Plum background behind the "GT" of the launcher icon. -->
+    <color name="ic_launcher_background">#120E17</color>
+    <!-- Behind the splash icon and the app while it loads. -->
+    <color name="splash_background">#120E17</color>
 </resources>

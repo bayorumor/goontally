@@ -35,8 +35,6 @@ export const createRouter = () =>
             { path: "groups/:id", ...group },
             { path: "add", ...add },
             { path: "history", ...history },
-            // Old links to the log page open the quick-log sheet on Home.
-            { path: "log", loader: () => redirect("/?log=1") },
             { path: "insights", ...insights },
             { path: "profile", ...settings },
             { path: "*", loader: () => notFound() },

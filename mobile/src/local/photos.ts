@@ -162,7 +162,7 @@ async function resize(file: Blob, kind: PhotoKind): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) =>
-        blob ? resolve(blob) : reject(new Error("Couldn't process the photo")),
+        blob ? resolve(blob) : reject(new Error("Couldn't process the image")),
       "image/jpeg",
       0.85,
     ),

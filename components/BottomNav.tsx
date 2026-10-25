@@ -21,7 +21,7 @@ export default function BottomNav() {
         key={href}
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`flex flex-1 flex-col items-center gap-0.5 pt-2 text-[11px] font-medium transition-colors ${
+        className={`flex flex-1 flex-col items-center gap-0.5 text-[11px] font-medium transition-colors ${
           active ? "text-primary-text" : "text-subtle"
         }`}
       >
@@ -37,9 +37,11 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[200] border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] md:hidden">
-      <div className="flex h-[var(--bottom-nav-h)] items-start">
+      {/* Tabs and the log button share one centre line; the side padding
+          keeps the outer tabs clear of rounded screen corners. */}
+      <div className="flex h-[var(--bottom-nav-h)] items-center px-2">
         {left.map(tab)}
-        <div className="flex flex-1 justify-center pt-1.5">
+        <div className="flex flex-1 justify-center">
           <button
             onClick={() => openLog()}
             aria-label="Log entry"

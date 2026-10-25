@@ -46,8 +46,13 @@ export async function exportRows(): Promise<BackupData> {
       db.all<{ entryId: number; tag: string; personIds: string }>(
         "SELECT entryId, tag, personIds FROM entryThoughts ORDER BY id",
       ),
-      db.all<{ category: string; label: string; createdAt: string }>(
-        "SELECT category, label, createdAt FROM customOptions ORDER BY createdAt",
+      db.all<{
+        category: string;
+        label: string;
+        hidden: number;
+        createdAt: string;
+      }>(
+        "SELECT category, label, hidden, createdAt FROM customOptions ORDER BY createdAt",
       ),
     ]);
 
@@ -58,6 +63,21 @@ export async function exportRows(): Promise<BackupData> {
     createdAt: r.createdAt,
   });
 
+  // Persons and thoughts by entry, in one pass each; filtering the whole
+  // list once per entry gets very slow with a long history.
+  const personsOf = new Map<number, number[]>();
+  for (const l of links) {
+    const list = personsOf.get(l.entryId) ?? [];
+    list.push(l.personId);
+    personsOf.set(l.entryId, list);
+  }
+  const thoughtsOf = new Map<number, { tag: string; personIds: number[] }[]>();
+  for (const t of thoughts) {
+    const list = thoughtsOf.get(t.entryId) ?? [];
+    list.push({ tag: t.tag, personIds: JSON.parse(t.personIds) });
+    thoughtsOf.set(t.entryId, list);
+  }
+
   return {
     persons: persons.map(named),
     groups: groups.map(named),
@@ -66,15 +86,20 @@ export async function exportRows(): Promise<BackupData> {
       loggedAt: e.loggedAt,
       mediumTags: JSON.parse(e.mediumTags),
       notes: e.notes,
-      personIds: links.filter((l) => l.entryId === e.id).map((l) => l.personId),
-      thoughts: thoughts
-        .filter((t) => t.entryId === e.id)
-        .map((t) => ({ tag: t.tag, personIds: JSON.parse(t.personIds) })),
+      personIds: personsOf.get(e.id) ?? [],
+      thoughts: thoughtsOf.get(e.id) ?? [],
       createdAt: e.createdAt,
     })),
     options: options.flatMap((o) =>
       o.category === "thought" || o.category === "medium"
-        ? [{ category: o.category, label: o.label, createdAt: o.createdAt }]
+        ? [
+            {
+              category: o.category,
+              label: o.label,
+              hidden: !!o.hidden,
+              createdAt: o.createdAt,
+            },
+          ]
         : [],
     ),
   };
@@ -234,10 +259,11 @@ export async function importRows(
     await insertMany(
       tx,
       "customOptions",
-      ["category", "label", "createdAt", "updatedAt"],
+      ["category", "label", "hidden", "createdAt", "updatedAt"],
       data.options.map((o) => [
         o.category,
         o.label,
+        o.hidden ? 1 : 0,
         iso(o.createdAt),
         iso(o.createdAt),
       ]),

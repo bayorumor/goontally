@@ -17,6 +17,7 @@ import { PERSON_ASPECT } from "@/lib/image";
 interface Props {
   file: File;
   aspect?: number;
+  // Set while the parent saves the cropped image.
   uploading?: boolean;
   confirmLabel?: string;
   onConfirm: (file: File) => void;
@@ -88,7 +89,7 @@ export default function PhotoCropperModal({
   file,
   aspect = PERSON_ASPECT,
   uploading = false,
-  confirmLabel = "Upload",
+  confirmLabel = "Save",
   onConfirm,
   onCancel,
 }: Props) {
@@ -134,12 +135,12 @@ export default function PhotoCropperModal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Crop photo"
+        aria-label="Crop image"
         tabIndex={-1}
         className="animate-sheet outline-none flex max-h-full w-full max-w-md flex-col gap-4 rounded-xl border border-border-strong bg-surface-2 p-5"
       >
         <div>
-          <h2 className="text-[17px] font-semibold">Crop photo</h2>
+          <h2 className="text-[17px] font-semibold">Crop image</h2>
           <p className="text-[13px] text-muted">
             Drag to reposition, pull the corners to resize.
           </p>
@@ -181,7 +182,7 @@ export default function PhotoCropperModal({
             disabled={!completedCrop || busy}
           >
             {uploading
-              ? "Uploading…"
+              ? "Saving…"
               : processing
                 ? "Processing…"
                 : confirmLabel}

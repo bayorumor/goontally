@@ -5,8 +5,8 @@ import { Plus } from "lucide-react";
 import { NAME_MAX } from "@/lib/constants";
 
 interface Props {
-  defaults: string[];
-  custom: string[];
+  // What's offered (lib/options.ts), built-in ones first.
+  options: string[];
   selected: string[];
   onToggle: (label: string) => void;
   // Saves a new custom label; it's selected once saved.
@@ -14,10 +14,11 @@ interface Props {
   placeholder: string;
 }
 
-// Toggleable chips for a fixed list plus the user's own labels.
+// Toggleable chips for the offered labels. A label the entry already has
+// shows too, even if it's no longer offered, so editing never drops it
+// unseen.
 export default function TagPicker({
-  defaults,
-  custom,
+  options: offered,
   selected,
   onToggle,
   onAddCustom,
@@ -25,16 +26,22 @@ export default function TagPicker({
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [value, setValue] = useState("");
-  const options = [...defaults, ...custom.filter((l) => !defaults.includes(l))];
+  const options = [
+    ...offered,
+    ...selected.filter((l) => !offered.includes(l)),
+  ];
 
   const add = async () => {
     const label = value.trim();
     setValue("");
     setAdding(false);
     if (!label) return;
-    if (!options.some((o) => o.toLowerCase() === label.toLowerCase()))
-      await onAddCustom(label);
-    if (!selected.includes(label)) onToggle(label);
+    // Typing an existing option in another case picks that option instead
+    // of adding a near-duplicate.
+    const known = options.find((o) => o.toLowerCase() === label.toLowerCase());
+    if (!known) await onAddCustom(label);
+    const pick = known ?? label;
+    if (!selected.includes(pick)) onToggle(pick);
   };
 
   return (

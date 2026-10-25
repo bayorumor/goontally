@@ -256,15 +256,12 @@ export async function listEntries(
 export async function getUser(userId: number) {
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, email: true, avatar: true },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      avatar: true,
+      termsAcceptedAt: true,
+    },
   });
-}
-
-export async function listOptionLabels(userId: number, category: string) {
-  const options = await prisma.userCustomOption.findMany({
-    where: { userId, category },
-    select: { label: true },
-    orderBy: { createdAt: "asc" },
-  });
-  return options.map((o) => o.label);
 }

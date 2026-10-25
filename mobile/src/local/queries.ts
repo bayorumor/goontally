@@ -274,11 +274,3 @@ async function withDetails(
       })),
   }));
 }
-
-export async function listOptionLabels(category: string) {
-  const rows = await db.all<{ label: string }>(
-    "SELECT label FROM customOptions WHERE category = ? ORDER BY createdAt",
-    [category],
-  );
-  return rows.map((r) => r.label);
-}

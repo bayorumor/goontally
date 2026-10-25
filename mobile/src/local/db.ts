@@ -91,6 +91,10 @@ const MIGRATIONS = [
     value TEXT NOT NULL
   );
   `,
+  // 3: options can be hidden, built-in ones included (see prisma/schema.prisma).
+  `
+  ALTER TABLE customOptions ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 let driver: Driver | null = null;

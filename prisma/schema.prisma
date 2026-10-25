@@ -23,6 +23,8 @@ model User {
   passwordExpiresAt  DateTime?
   // Bumped on every password change; sessions from before stop working.
   sessionVersion     Int                @default(0)
+  // When the account agreed to the terms of use, asked once before first use.
+  termsAcceptedAt    DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   persons            Person[]
@@ -104,11 +106,15 @@ model EntryThought {
   @@index([entryId])
 }
 
+// A finish ("thought") or medium of the user's own, or the state of a
+// built-in one. A row with hidden set is no longer offered when logging;
+// for a built-in label (lib/constants.ts) that's the only reason it has one.
 model UserCustomOption {
   id        Int      @id @default(autoincrement())
   userId    Int
   category  String
   label     String
+  hidden    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

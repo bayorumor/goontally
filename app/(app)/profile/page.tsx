@@ -12,6 +12,8 @@ import Avatar from "@/components/ui/Avatar";
 import PhotoUploader from "@/components/PhotoUploader";
 import LogoutButton from "@/components/LogoutButton";
 import BackupCard from "@/components/BackupCard";
+import OptionsCard from "@/components/options/OptionsCard";
+import TermsCard from "@/components/terms/TermsCard";
 
 export default async function ProfilePage() {
   const userId = await requireUserId();
@@ -60,7 +62,11 @@ export default async function ProfilePage() {
         ))}
       </nav>
 
+      <OptionsCard />
+
       <BackupCard />
+
+      <TermsCard where="web" />
 
       <LogoutButton />
     </div>

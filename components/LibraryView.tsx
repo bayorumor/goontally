@@ -6,7 +6,6 @@ import { Search, UserRoundPlus } from "lucide-react";
 import PersonGrid from "@/components/PersonGrid";
 import Avatar from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/StateViews";
-import { titleCase } from "@/lib/format";
 import { GroupWithMembers, PersonWithCount } from "@/lib/types";
 
 type Tab = "persons" | "groups";
@@ -163,7 +162,7 @@ export default function LibraryView({ persons, groups, initialTab }: Props) {
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold">
-                  {titleCase(g.name)}
+                  {g.name}
                 </span>
                 <span className="block text-[13px] text-muted">
                   {g.persons.length} member{g.persons.length !== 1 ? "s" : ""}

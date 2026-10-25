@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
 import { equalsIgnoringCase } from "./match";
+import { parseId } from "./ids";
 import { prisma } from "./prisma";
 
 // Cached per request, so the layout and the page share one session lookup.
@@ -44,13 +45,7 @@ export const jsonError = (error: string, status: number) =>
 
 export const unauthorized = () => jsonError("Unauthorized", 401);
 
-// Positive integer id from a route param / body value, or null.
-export function parseId(value: unknown): number | null {
-  if (typeof value !== "string" && typeof value !== "number") return null;
-  if (typeof value === "string" && !/^\d+$/.test(value.trim())) return null;
-  const n = Number(value);
-  return Number.isSafeInteger(n) && n > 0 ? n : null;
-}
+export { parseId };
 
 export function isUniqueViolation(err: unknown) {
   return (

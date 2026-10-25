@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import { useQuickLog } from "@/components/log/QuickLog";
 import { isActive, NAV_ITEMS } from "@/lib/nav";
 
 interface Props {
-  user: { username: string; avatar: string | null };
+  // The signed-in account, shown as an avatar. Without one (the Android
+  // app has no accounts) the link is a settings gear instead.
+  user?: { username: string; avatar: string | null };
 }
 
-// Sticky top bar. Phones get the logo and the profile avatar (the tabs live
-// in the bottom nav); wider screens also get the tabs and a Log button.
+// Sticky top bar. Phones get the logo and the profile avatar or settings
+// gear (the tabs live in the bottom nav); wider screens also get the tabs
+// and a Log button.
 export default function TopNav({ user }: Props) {
   const pathname = usePathname();
   const { openLog } = useQuickLog();
@@ -52,14 +55,18 @@ export default function TopNav({ user }: Props) {
           </button>
           <Link
             href="/profile"
-            aria-label="Profile"
+            aria-label={user ? "Profile" : "Settings"}
             className={`flex h-9 w-9 items-center justify-center rounded-full ring-2 transition ${
               pathname === "/profile"
                 ? "ring-primary"
                 : "ring-transparent hover:ring-border-strong"
             }`}
           >
-            <Avatar src={user.avatar} name={user.username} size={32} />
+            {user ? (
+              <Avatar src={user.avatar} name={user.username} size={32} />
+            ) : (
+              <Settings size={22} className="text-muted" />
+            )}
           </Link>
         </div>
       </div>

@@ -1,7 +1,3 @@
-// "jane doe" -> "Jane Doe". Display only; names are stored as typed.
-export const titleCase = (str?: string) =>
-  str?.replace(/\b\w/g, (c) => c.toUpperCase()) ?? "";
-
 // Dates are formatted with an explicit timezone so server-rendered HTML and
 // the browser produce the same text.
 export const formatDateTime = (iso: string, timeZone: string) =>

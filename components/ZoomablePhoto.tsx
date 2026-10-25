@@ -36,6 +36,9 @@ export default function ZoomablePhoto({ src, fullSrc, alt, className }: Props) {
         // At the end of <body>, clear of the page's `isolate` wrapper.
         createPortal(
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={alt}
             className="animate-fade fixed inset-0 z-[500] flex items-center justify-center bg-black/90 p-4"
             onClick={() => setOpen(false)}
           >

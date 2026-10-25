@@ -9,7 +9,10 @@ import { initPhotos } from "./local/photos";
 import { App } from "@capacitor/app";
 import { installLocalApi } from "./local/api";
 import { runAutoBackupIfDue } from "./local/autoBackup";
+import { checkIfDue } from "./local/updates";
 import { createRouter } from "./router";
+import LockGate from "./lock/LockGate";
+import { installBackButton } from "./backButton";
 
 const root = createRoot(document.getElementById("root")!);
 
@@ -19,15 +22,22 @@ Promise.all([openDb(), initPhotos()])
   .then(() => {
     installLocalApi();
     const router = createRouter();
+    installBackButton(router);
     root.render(
       <StrictMode>
-        <RouterProvider router={router} />
+        <LockGate>
+          <RouterProvider router={router} />
+        </LockGate>
       </StrictMode>,
     );
-    // An automatic backup, if one is due, once the first screen is up, and
-    // again whenever the app comes back to the front.
-    setTimeout(runAutoBackupIfDue, 3000);
-    void App.addListener("resume", runAutoBackupIfDue);
+    // An automatic backup and the daily update check, if due, once the
+    // first screen is up, and again whenever the app comes back to the front.
+    const whenDue = () => {
+      void runAutoBackupIfDue();
+      void checkIfDue();
+    };
+    setTimeout(whenDue, 3000);
+    void App.addListener("resume", whenDue);
   })
   .catch((err: unknown) => {
     console.error(err);

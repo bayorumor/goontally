@@ -58,7 +58,12 @@ export async function updateNamed(
   const row = await findOwned(kind, userId, id);
   if (!row) return jsonError(NOT_FOUND[kind], 404);
 
-  const form = await req.formData();
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return jsonError("Invalid request body", 400);
+  }
   const rawName = String(form.get("name") ?? "").trim();
   const photo = getImageFile(form.get("photo"));
   const updates: { name?: string; photoUrl?: string } = {};
@@ -81,7 +86,7 @@ export async function updateNamed(
     try {
       updates.photoUrl = await uploadImage(photo, kind);
     } catch {
-      return jsonError("Couldn't upload the photo, please try again", 502);
+      return jsonError("Couldn't upload the image, please try again", 502);
     }
   }
 
@@ -216,7 +221,7 @@ export async function addToLibrary(userId: number, req: NextRequest) {
     {
       groupId: savedGroupId,
       ...(photoFailed
-        ? { warning: "Saved, but some photos failed to upload" }
+        ? { warning: "Saved, but some images failed to upload" }
         : {}),
     },
     { status: 201 },

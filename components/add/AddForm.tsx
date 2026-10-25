@@ -129,7 +129,7 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
         <PhotoCropperModal
           file={cropping.file}
           aspect={cropping.rowId ? PERSON_ASPECT : SQUARE_ASPECT}
-          confirmLabel="Use photo"
+          confirmLabel="Use image"
           onConfirm={(file) => {
             if (cropping.rowId) updateRow(cropping.rowId, { photo: file });
             else setGroupPhoto(file);
@@ -179,14 +179,16 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
                 file={groupPhoto}
                 onPick={(file) => setCropping({ file, rowId: null })}
                 shape="square"
-                label={`Add a photo for ${newGroupName}`}
+                label={`Add an image for ${newGroupName}`}
               />
             )}
           </div>
           {newGroupName && (
             <p className="text-[13px] text-muted">
               A new group{" "}
-              <span className="font-semibold text-text">{newGroupName}</span>{" "}
+              <span className="font-semibold text-text">
+                {newGroupName}
+              </span>{" "}
               will be created.
             </p>
           )}
@@ -200,7 +202,7 @@ export default function AddForm({ groups, allPersons, initialGroupId }: Props) {
                 <PhotoSlot
                   file={row.photo}
                   onPick={(file) => setCropping({ file, rowId: row.id })}
-                  label={`Add a photo of ${row.newName}`}
+                  label={`Add an image of ${row.newName}`}
                 />
               ) : (
                 <Avatar

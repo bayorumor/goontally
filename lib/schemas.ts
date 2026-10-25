@@ -91,14 +91,33 @@ export const entryBody = z
 
 export type EntryBody = z.infer<typeof entryBody>;
 
+const optionCategory = z.enum(["thought", "medium"], "Category is required");
+const optionLabel = z
+  .string("Label is required")
+  .trim()
+  .min(1, "Label is required")
+  .max(100);
+
 // POST /api/options: a custom finish ("thought") or medium label.
 export const optionBody = z.object({
-  category: z.enum(["thought", "medium"], "Category is required"),
-  label: z
-    .string("Label is required")
-    .trim()
-    .min(1, "Label is required")
-    .max(100),
+  category: optionCategory,
+  label: optionLabel,
+});
+
+// PATCH /api/options: renames an option, in past entries too. A name that's
+// already an option merges the two.
+export const optionRenameBody = z.object({
+  category: optionCategory,
+  from: optionLabel,
+  to: optionLabel,
+});
+
+// DELETE /api/options: stops offering an option; with fromEntries, also
+// takes it off every past entry.
+export const optionRemoveBody = z.object({
+  category: optionCategory,
+  label: optionLabel,
+  fromEntries: z.boolean().default(false),
 });
 
 // Photos are cropped to JPEG in the browser; these cover uploads from
@@ -136,7 +155,7 @@ export function readPhotos(
   for (const key of keys) {
     if (!key || photos.has(key)) continue;
     const file = getImageFile(form.get(`photo:${key}`));
-    if (!file) return "Missing photo upload";
+    if (!file) return "Missing image upload";
     const invalid = validateImage(file);
     if (invalid) return invalid;
     photos.set(key, file);
