@@ -8,6 +8,7 @@ import {
   readPhotos,
   validateImage,
 } from "@/lib/schemas";
+import { exportRows } from "./backup";
 import { db, type Tx } from "./db";
 import { deletePhoto, savePhoto, type PhotoKind } from "./photos";
 import {
@@ -532,6 +533,10 @@ const deleteOption: Handler = async (_req, { id: rawId }) => {
   return json({ message: "Option deleted" });
 };
 
+// GET /api/backup: every row, for the backup packer. Restoring skips the
+// API and writes straight to the database (see shims/backup-client.ts).
+const getBackup: Handler = async () => json(await exportRows());
+
 const ROUTES: [method: string, path: RegExp, handler: Handler][] = [
   ["POST", /^\/api\/persons$/, addPersons],
   ["PATCH", /^\/api\/persons\/(?<id>[^/]+)$/, updateNamed("person")],
@@ -545,6 +550,7 @@ const ROUTES: [method: string, path: RegExp, handler: Handler][] = [
   ["GET", /^\/api\/log-data$/, getLogData],
   ["POST", /^\/api\/options$/, addOption],
   ["DELETE", /^\/api\/options\/(?<id>[^/]+)$/, deleteOption],
+  ["GET", /^\/api\/backup$/, getBackup],
 ];
 
 // Routes fetch("/api/...") on this origin to the handlers above; everything

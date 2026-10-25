@@ -1,6 +1,5 @@
 import { createBrowserRouter, redirect } from "react-router";
 import AppLayout from "./routes/AppLayout";
-import Placeholder from "./routes/Placeholder";
 import RouteError from "./routes/RouteError";
 import { notFound } from "./routes/util";
 import * as home from "./routes/home";
@@ -10,6 +9,7 @@ import * as group from "./routes/group";
 import * as add from "./routes/add";
 import * as history from "./routes/history";
 import * as insights from "./routes/insights";
+import * as settings from "./routes/settings";
 
 // Same paths as the web app, so shared components link to the right place.
 // Each route's loader stands in for the web page's server code: it reads
@@ -38,7 +38,7 @@ export const createRouter = () =>
             // Old links to the log page open the quick-log sheet on Home.
             { path: "log", loader: () => redirect("/?log=1") },
             { path: "insights", ...insights },
-            { path: "profile", element: <Placeholder title="Settings" /> },
+            { path: "profile", ...settings },
             { path: "*", loader: () => notFound() },
           ],
         },

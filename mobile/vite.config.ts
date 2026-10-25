@@ -17,6 +17,11 @@ export default defineConfig({
         find: /^next\/navigation$/,
         replacement: here("src/shims/next-navigation.ts"),
       },
+      // Backups download on the web; the phone hands them to the share menu.
+      {
+        find: /^@\/lib\/backup\/client$/,
+        replacement: here("src/shims/backup-client.ts"),
+      },
       // Same "@/…" imports as the web app.
       { find: /^@\//, replacement: here("../") },
     ],

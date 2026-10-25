@@ -13,6 +13,7 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "paths": {
+      "@/lib/backup/client": ["./src/shims/backup-client.ts"],
       "@/*": ["../*"],
       "next/link": ["./src/shims/next-link.tsx"],
       "next/navigation": ["./src/shims/next-navigation.ts"]

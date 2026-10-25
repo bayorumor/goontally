@@ -65,7 +65,12 @@ export function photoSrc(name: string | null): string | null {
 
 // Resizes and stores a photo; returns its file name for the database.
 export async function savePhoto(file: Blob, kind: PhotoKind): Promise<string> {
-  const jpeg = await resize(file, kind);
+  // A JPEG that's already the right size (photos from a backup always are)
+  // is stored as it is: decoding and compressing it again is slow on a
+  // phone and loses a little quality each time.
+  const jpeg = fitsAlready(await jpegSize(file), kind)
+    ? file
+    : await resize(file, kind);
   const name = `${crypto.randomUUID()}.jpg`;
   await Filesystem.writeFile({
     directory: Directory.Data,
@@ -88,6 +93,41 @@ export async function deletePhoto(name: string | null) {
   const url = devUrls.get(name);
   if (url) URL.revokeObjectURL(url);
   devUrls.delete(name);
+}
+
+function fitsAlready(
+  size: { width: number; height: number } | null,
+  kind: PhotoKind,
+) {
+  if (!size) return false;
+  return kind === "group"
+    ? size.width === size.height && size.width <= 400
+    : size.width <= 800;
+}
+
+// Width and height from a JPEG's header (its SOF segment), or null when the
+// file isn't a JPEG. Reads only the start of the file; nothing is decoded.
+async function jpegSize(file: Blob) {
+  const bytes = new Uint8Array(await file.slice(0, 256 * 1024).arrayBuffer());
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < bytes.length) {
+    if (bytes[i] !== 0xff) return null;
+    const marker = bytes[i + 1];
+    const length = (bytes[i + 2] << 8) | bytes[i + 3];
+    // SOF0–SOF15, minus DHT (C4), JPG (C8) and DAC (CC), which share the range.
+    if (
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      ![0xc4, 0xc8, 0xcc].includes(marker)
+    )
+      return {
+        height: (bytes[i + 5] << 8) | bytes[i + 6],
+        width: (bytes[i + 7] << 8) | bytes[i + 8],
+      };
+    i += 2 + length;
+  }
+  return null;
 }
 
 async function resize(file: Blob, kind: PhotoKind): Promise<Blob> {

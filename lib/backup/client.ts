@@ -1,6 +1,6 @@
 import { packBackup, type Backup } from "./archive";
 import { BACKUP_EXTENSION, makeManifest, PHOTO_TYPES, type BackupData } from "./format";
-import type { ImportMode, ImportResult } from "./server";
+import type { ImportMode, ImportResult } from "./format";
 
 // Browser half of backups on the web app: packs the rows from GET
 // /api/backup with photos fetched straight from Cloudinary, and after an
@@ -31,6 +31,8 @@ export async function createBackup(opts: {
   includePhotos: boolean;
   password?: string;
   onPhotos?: Progress;
+  // Which app wrote the file, for the import summary.
+  app?: string;
 }): Promise<{ file: Uint8Array; filename: string; missingPhotos: number }> {
   const rows: BackupData = await readJson(
     await fetch("/api/backup", { cache: "no-store" }),
@@ -73,7 +75,7 @@ export async function createBackup(opts: {
     groups: rows.groups.map(withPaths),
   };
   const backup: Backup = {
-    manifest: makeManifest(data, "web", photos.size),
+    manifest: makeManifest(data, opts.app ?? "web", photos.size),
     data,
     photos,
   };
@@ -86,7 +88,12 @@ export async function createBackup(opts: {
   };
 }
 
-export function saveFile(bytes: Uint8Array, filename: string) {
+// Downloads the file. Returns whether it was saved; the Android app swaps
+// this for the share menu, where the person can still back out.
+export async function saveFile(
+  bytes: Uint8Array,
+  filename: string,
+): Promise<boolean> {
   const url = URL.createObjectURL(
     new Blob([bytes as Uint8Array<ArrayBuffer>], { type: "application/octet-stream" }),
   );
@@ -95,6 +102,7 @@ export function saveFile(bytes: Uint8Array, filename: string) {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  return true;
 }
 
 // Imports the rows, then uploads the photos the server asked for. Returns

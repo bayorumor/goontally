@@ -1,14 +1,14 @@
 import "server-only";
 import { prisma } from "../prisma";
 import { deleteImage } from "../cloudinary";
-import type { BackupData } from "./format";
+import type { BackupData, ImportMode, ImportResult } from "./format";
+
+export type { ImportMode, ImportResult };
 
 // Server half of backups. The browser packs and unpacks the .gtbak file
 // itself (photos come straight from Cloudinary), so requests stay small:
 // export sends rows with photo URLs, import takes rows and answers which
 // photos to upload next.
-
-export type ImportMode = "merge" | "replace";
 
 // Everything the user has, in backup shape. `photo` holds the Cloudinary
 // URL here; the browser swaps it for the photo's path in the zip.
@@ -75,14 +75,6 @@ export async function exportRows(userId: number): Promise<BackupData> {
         : [],
     ),
   };
-}
-
-export interface ImportResult {
-  added: { persons: number; groups: number; entries: number };
-  // Entries already in the account (merge) or repeated in the file.
-  skippedEntries: number;
-  // Photos the browser should upload next, to PATCH /api/{kind}s/{id}.
-  photos: { path: string; kind: "person" | "group"; id: number }[];
 }
 
 // Writes the backup's rows in one transaction. Persons and groups are

@@ -84,6 +84,13 @@ const MIGRATIONS = [
     UNIQUE (category, label)
   );
   `,
+  // 2: app settings (automatic backup), as JSON values.
+  `
+  CREATE TABLE settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  `,
 ];
 
 let driver: Driver | null = null;

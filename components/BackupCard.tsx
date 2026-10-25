@@ -8,7 +8,7 @@ import { useFeedback } from "@/components/ui/Feedback";
 import { BackupError, isEncrypted, readBackup, type Backup } from "@/lib/backup/archive";
 import { createBackup, restoreBackup, saveFile } from "@/lib/backup/client";
 import { BACKUP_EXTENSION } from "@/lib/backup/format";
-import type { ImportMode } from "@/lib/backup/server";
+import type { ImportMode } from "@/lib/backup/format";
 
 const plural = (n: number, one: string, many = `${one}s`) =>
   `${n.toLocaleString()} ${n === 1 ? one : many}`;
@@ -20,13 +20,17 @@ const message = (err: unknown) =>
 
 // Profile → Backup: export everything to a .gtbak file, or import one. The
 // same file opens in the Android app.
-export default function BackupCard() {
+//
+// `anyFile` lists every file when picking one to import. Android's picker
+// filters by file type, knows nothing of .gtbak, and would show nothing; the
+// file is checked once picked anyway.
+export default function BackupCard({ anyFile = false }: { anyFile?: boolean }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="section-label px-1">Backup</h2>
       <div className="card divide-y divide-border overflow-hidden">
         <ExportRow />
-        <ImportRow />
+        <ImportRow anyFile={anyFile} />
       </div>
     </section>
   );
@@ -78,7 +82,7 @@ function ExportRow() {
         onPhotos: (done, total) =>
           setStatus(total ? `Fetching photos ${done}/${total}…` : "Packing…"),
       });
-      saveFile(file, filename);
+      if (!(await saveFile(file, filename))) return;
       setOpen(false);
       toast(
         missingPhotos
@@ -118,7 +122,7 @@ function ExportRow() {
         <div className="flex flex-col gap-5">
           <p className="text-[14px] text-muted">
             Saves your persons, groups, entries and options to one{" "}
-            {BACKUP_EXTENSION} file. It opens here and in the Android app.
+            {BACKUP_EXTENSION} file. It opens in both the web app and the Android app.
           </p>
 
           <div>
@@ -179,6 +183,7 @@ function ExportRow() {
             </p>
           </div>
 
+          {busy && <KeepOpen />}
           {error && <p className="text-[13px] text-danger">{error}</p>}
         </div>
       </Sheet>
@@ -190,7 +195,7 @@ type ImportStep =
   | { kind: "password"; file: Uint8Array }
   | { kind: "summary"; backup: Backup };
 
-function ImportRow() {
+function ImportRow({ anyFile }: { anyFile: boolean }) {
   const router = useRouter();
   const { toast, confirm } = useFeedback();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -272,7 +277,7 @@ function ImportRow() {
       <input
         ref={inputRef}
         type="file"
-        accept={BACKUP_EXTENSION}
+        accept={anyFile ? undefined : BACKUP_EXTENSION}
         className="hidden"
         onChange={(e) => {
           pick(e.target.files?.[0]);
@@ -331,9 +336,23 @@ function ImportRow() {
         {step?.kind === "summary" && (
           <Summary backup={step.backup} mode={mode} onMode={setMode} busy={busy} />
         )}
+        {busy && step?.kind === "summary" && (
+          <div className="mt-3">
+            <KeepOpen />
+          </div>
+        )}
         {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
       </Sheet>
     </>
+  );
+}
+
+// Leaving partway is safe (see lib/backup), but it stops the work.
+function KeepOpen() {
+  return (
+    <p className="text-[13px] text-muted">
+      Keep this open until it finishes.
+    </p>
   );
 }
 

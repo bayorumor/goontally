@@ -6,7 +6,9 @@ import "@fontsource-variable/geom";
 import "./index.css";
 import { openDb } from "./local/db";
 import { initPhotos } from "./local/photos";
+import { App } from "@capacitor/app";
 import { installLocalApi } from "./local/api";
+import { runAutoBackupIfDue } from "./local/autoBackup";
 import { createRouter } from "./router";
 
 const root = createRoot(document.getElementById("root")!);
@@ -22,6 +24,10 @@ Promise.all([openDb(), initPhotos()])
         <RouterProvider router={router} />
       </StrictMode>,
     );
+    // An automatic backup, if one is due, once the first screen is up, and
+    // again whenever the app comes back to the front.
+    setTimeout(runAutoBackupIfDue, 3000);
+    void App.addListener("resume", runAutoBackupIfDue);
   })
   .catch((err: unknown) => {
     console.error(err);

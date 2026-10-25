@@ -128,6 +128,19 @@ export function checkReferences(data: BackupData): string | null {
   return null;
 }
 
+// Importing: "merge" adds what's missing, "replace" empties everything
+// first.
+export type ImportMode = "merge" | "replace";
+
+// The reply to an import (POST /api/backup), on the web and on the phone.
+export interface ImportResult {
+  added: { persons: number; groups: number; entries: number };
+  // Entries already there (merge) or repeated in the file.
+  skippedEntries: number;
+  // Photos to upload next, to PATCH /api/{kind}s/{id}.
+  photos: { path: string; kind: "person" | "group"; id: number }[];
+}
+
 // Photo paths the data refers to, without repeats.
 export const photoPaths = (data: BackupData) => [
   ...new Set(
