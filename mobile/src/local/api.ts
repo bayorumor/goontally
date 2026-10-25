@@ -1,14 +1,21 @@
 import { NAME_MAX } from "@/lib/constants";
 import {
   addPersonsBody,
+  entryBody,
   getImageFile,
   nameField,
+  optionBody,
   readPhotos,
   validateImage,
 } from "@/lib/schemas";
 import { db, type Tx } from "./db";
 import { deletePhoto, savePhoto, type PhotoKind } from "./photos";
-import { listEntries } from "./queries";
+import {
+  listEntries,
+  listGroupRefs,
+  listOptionLabels,
+  listPersonsForPicker,
+} from "./queries";
 
 // The phone's stand-in for app/api: the shared components keep calling
 // fetch("/api/..."), and this answers from SQLite instead of a server. Same
@@ -340,6 +347,191 @@ const getEntries: Handler = async (req) => {
   );
 };
 
+// POST /api/entries and PATCH /api/entries/:id share the multipart body and
+// resolve persons and groups the same way (lib/entryInput.ts on the web).
+const saveEntry =
+  (mode: "create" | "edit"): Handler =>
+  async (req, params) => {
+    const entryId = mode === "edit" ? parseId(params.id) : null;
+    if (mode === "edit" && !entryId) return jsonError("Entry not found", 404);
+
+    const form = await readForm(req);
+    if (!form) return jsonError("Invalid request body", 400);
+    const parsed = entryBody.safeParse(form.raw);
+    if (!parsed.success)
+      return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
+    const body = parsed.data;
+
+    const photos = readPhotos(
+      form.form,
+      body.persons.flatMap((r) => [r.personPhotoKey, r.groupPhotoKey]),
+    );
+    if (typeof photos === "string") return jsonError(photos, 400);
+
+    const uploads: PhotoUpload[] = [];
+    let saved: { id: number; personIds: number[] } | null;
+    try {
+      saved = await db.transaction(async (tx) => {
+        for (const id of new Set(body.persons.map((r) => r.personId)))
+          if (
+            id &&
+            !(await tx.get("SELECT id FROM persons WHERE id = ?", [id]))
+          )
+            throw new Rejected(jsonError(NOT_FOUND.person, 404));
+        for (const id of new Set(body.persons.map((r) => r.groupId)))
+          if (id && !(await tx.get("SELECT id FROM groups WHERE id = ?", [id])))
+            throw new Rejected(jsonError(NOT_FOUND.group, 404));
+        if (
+          entryId &&
+          !(await tx.get("SELECT id FROM entries WHERE id = ?", [entryId]))
+        )
+          return null;
+
+        // New names are matched ignoring case against existing rows and
+        // against each other, so the same name always resolves to one row.
+        const known = new Map<string, number>();
+        const resolve = async (
+          kind: PhotoKind,
+          name: string,
+          photoKey?: string,
+        ) => {
+          const key = `${kind}:${name.toLowerCase()}`;
+          const seen = known.get(key);
+          if (seen) return seen;
+          const existing = await findByName(tx, kind, name);
+          const id = existing?.id ?? (await insertNamed(tx, kind, name));
+          if (!existing && photoKey)
+            uploads.push({ kind, id, file: photos.get(photoKey)! });
+          known.set(key, id);
+          return id;
+        };
+
+        const entryPersonIds: number[] = [];
+        // The resolved person of each row, for thoughts that point at rows.
+        const rowPersonIds: number[] = [];
+        for (const row of body.persons) {
+          const groupId = row.newGroupName
+            ? await resolve("group", row.newGroupName, row.groupPhotoKey)
+            : row.groupId;
+          const personId = row.newPersonName
+            ? await resolve("person", row.newPersonName, row.personPhotoKey)
+            : row.personId!;
+          rowPersonIds.push(personId);
+          if (!entryPersonIds.includes(personId)) entryPersonIds.push(personId);
+          if (groupId)
+            await tx.run(
+              "INSERT OR IGNORE INTO memberships (personId, groupId, joinedAt) VALUES (?, ?, ?)",
+              [personId, groupId, now()],
+            );
+        }
+
+        // A thought with no rows (e.g. a one-person entry) is about everyone.
+        const thoughts = body.thoughts.map((t) => {
+          const ids = [...new Set(t.rows.map((r) => rowPersonIds[r]))];
+          return { tag: t.tag, personIds: ids.length ? ids : entryPersonIds };
+        });
+
+        const fields = [
+          (body.loggedAt ?? new Date()).toISOString(),
+          JSON.stringify(body.mediumTags),
+          body.notes || null,
+        ];
+        let id: number;
+        if (entryId) {
+          id = entryId;
+          await tx.run("DELETE FROM entryPersons WHERE entryId = ?", [id]);
+          await tx.run("DELETE FROM entryThoughts WHERE entryId = ?", [id]);
+          await tx.run(
+            "UPDATE entries SET loggedAt = ?, mediumTags = ?, notes = ?, updatedAt = ? WHERE id = ?",
+            [...fields, now(), id],
+          );
+        } else {
+          const at = now();
+          ({ lastId: id } = await tx.run(
+            "INSERT INTO entries (loggedAt, mediumTags, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+            [...fields, at, at],
+          ));
+        }
+        for (const personId of entryPersonIds)
+          await tx.run(
+            "INSERT INTO entryPersons (entryId, personId) VALUES (?, ?)",
+            [id, personId],
+          );
+        for (const t of thoughts)
+          await tx.run(
+            "INSERT INTO entryThoughts (entryId, tag, personIds) VALUES (?, ?, ?)",
+            [id, t.tag, JSON.stringify(t.personIds)],
+          );
+        return { id, personIds: entryPersonIds };
+      });
+    } catch (err) {
+      if (err instanceof Rejected) return err.response;
+      throw err;
+    }
+    if (!saved) return jsonError("Entry not found", 404);
+
+    const photoFailed = await savePhotos(uploads);
+    return json(
+      {
+        entry: saved,
+        ...(photoFailed
+          ? { warning: "Saved, but some photos failed to upload" }
+          : {}),
+      },
+      mode === "create" ? 201 : 200,
+    );
+  };
+
+// DELETE /api/entries/:id
+const deleteEntry: Handler = async (_req, { id: rawId }) => {
+  const id = parseId(rawId);
+  const { changes } = id
+    ? await db.run("DELETE FROM entries WHERE id = ?", [id])
+    : { changes: 0 };
+  if (!changes) return jsonError("Entry not found", 404);
+  return json({ message: "Entry deleted" });
+};
+
+// GET /api/log-data: everything the quick-log sheet needs when it opens.
+const getLogData: Handler = async () => {
+  const [persons, groups, thoughtOptions, mediumOptions] = await Promise.all([
+    listPersonsForPicker(),
+    listGroupRefs(),
+    listOptionLabels("thought"),
+    listOptionLabels("medium"),
+  ]);
+  return json({ persons, groups, thoughtOptions, mediumOptions });
+};
+
+// POST /api/options: saves a custom finish or medium for next time. Adding
+// one that exists is a no-op rather than an error.
+const addOption: Handler = async (req) => {
+  const parsed = optionBody.safeParse(await req.json().catch(() => null));
+  if (!parsed.success)
+    return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
+  const { category, label } = parsed.data;
+  const at = now();
+  await db.run(
+    "INSERT OR IGNORE INTO customOptions (category, label, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+    [category, label, at, at],
+  );
+  const option = await db.get(
+    "SELECT id, category, label, createdAt, updatedAt FROM customOptions WHERE category = ? AND label = ?",
+    [category, label],
+  );
+  return json({ option }, 201);
+};
+
+// DELETE /api/options/:id
+const deleteOption: Handler = async (_req, { id: rawId }) => {
+  const id = parseId(rawId);
+  const { changes } = id
+    ? await db.run("DELETE FROM customOptions WHERE id = ?", [id])
+    : { changes: 0 };
+  if (!changes) return jsonError("Option not found", 404);
+  return json({ message: "Option deleted" });
+};
+
 const ROUTES: [method: string, path: RegExp, handler: Handler][] = [
   ["POST", /^\/api\/persons$/, addPersons],
   ["PATCH", /^\/api\/persons\/(?<id>[^/]+)$/, updateNamed("person")],
@@ -347,6 +539,12 @@ const ROUTES: [method: string, path: RegExp, handler: Handler][] = [
   ["PATCH", /^\/api\/groups\/(?<id>[^/]+)$/, updateNamed("group")],
   ["DELETE", /^\/api\/groups\/(?<id>[^/]+)$/, deleteGroup],
   ["GET", /^\/api\/entries$/, getEntries],
+  ["POST", /^\/api\/entries$/, saveEntry("create")],
+  ["PATCH", /^\/api\/entries\/(?<id>[^/]+)$/, saveEntry("edit")],
+  ["DELETE", /^\/api\/entries\/(?<id>[^/]+)$/, deleteEntry],
+  ["GET", /^\/api\/log-data$/, getLogData],
+  ["POST", /^\/api\/options$/, addOption],
+  ["DELETE", /^\/api\/options\/(?<id>[^/]+)$/, deleteOption],
 ];
 
 // Routes fetch("/api/...") on this origin to the handlers above; everything

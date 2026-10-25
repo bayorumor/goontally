@@ -8,6 +8,7 @@ import * as library from "./routes/library";
 import * as person from "./routes/person";
 import * as group from "./routes/group";
 import * as add from "./routes/add";
+import * as history from "./routes/history";
 
 // Same paths as the web app, so shared components link to the right place.
 // Each route's loader stands in for the web page's server code: it reads
@@ -32,7 +33,9 @@ export const createRouter = () =>
             { path: "groups", loader: () => redirect("/library?tab=groups") },
             { path: "groups/:id", ...group },
             { path: "add", ...add },
-            { path: "history", element: <Placeholder title="History" /> },
+            { path: "history", ...history },
+            // Old links to the log page open the quick-log sheet on Home.
+            { path: "log", loader: () => redirect("/?log=1") },
             { path: "insights", element: <Placeholder title="Insights" /> },
             { path: "profile", element: <Placeholder title="Settings" /> },
             { path: "*", loader: () => notFound() },

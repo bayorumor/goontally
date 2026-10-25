@@ -12,6 +12,9 @@ import { Entry } from "@/lib/types";
 import { fetchEntriesAfter } from "@/lib/entryPages";
 import { titleCase } from "@/lib/format";
 
+// Finish and medium chips are a size smaller on phones, where rows are tight.
+const SMALL_CHIP = "max-md:h-5 max-md:px-2 max-md:text-[11px]";
+
 interface Props {
   initialEntries: Entry[];
   total: number;
@@ -138,7 +141,21 @@ export default function HistoryList({
                     key={e.id}
                     className={`flex items-center gap-4 px-4 py-3 transition-opacity ${deletingId === e.id ? "opacity-40" : ""}`}
                   >
-                    <span className="flex shrink-0 -space-x-4">
+                    {/* Phones show the first person with a "+N" badge; a
+                        stack of three would squeeze the names and chips. */}
+                    <span className="relative shrink-0 md:hidden">
+                      <Avatar
+                        src={e.persons[0]?.photoUrl ?? null}
+                        name={e.persons[0]?.name ?? ""}
+                        size={48}
+                      />
+                      {e.persons.length > 1 && (
+                        <span className="absolute -bottom-1 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-surface-3 px-1 text-[11px] font-semibold text-text ring-2 ring-surface-1">
+                          +{e.persons.length - 1}
+                        </span>
+                      )}
+                    </span>
+                    <span className="hidden shrink-0 -space-x-4 md:flex">
                       {e.persons.slice(0, 3).map((p) => (
                         <Avatar
                           key={p.id}
@@ -151,7 +168,9 @@ export default function HistoryList({
                     </span>
 
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <p className="min-w-0 text-[15px] font-semibold">
+                      {/* Two lines at most, ending in "…"; a long name with
+                          no spaces breaks instead of running into the time. */}
+                      <p className="line-clamp-2 min-w-0 text-[15px] font-semibold wrap-anywhere">
                         {e.persons.map((p, i) => (
                           <span key={p.id}>
                             {i > 0 && <span className="text-muted">, </span>}
@@ -167,12 +186,15 @@ export default function HistoryList({
                       {(e.thoughts.length > 0 || e.mediumTags.length > 0) && (
                         <div className="chip-row">
                           {e.thoughts.map((t) => (
-                            <span key={t.id} className="chip chip--primary">
+                            <span
+                              key={t.id}
+                              className={`chip chip--primary ${SMALL_CHIP}`}
+                            >
                               {t.tag}
                             </span>
                           ))}
                           {e.mediumTags.map((tag) => (
-                            <span key={tag} className="chip">
+                            <span key={tag} className={`chip ${SMALL_CHIP}`}>
                               {tag}
                             </span>
                           ))}
