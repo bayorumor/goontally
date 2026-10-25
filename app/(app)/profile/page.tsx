@@ -11,6 +11,7 @@ import { SQUARE_ASPECT } from "@/lib/image";
 import Avatar from "@/components/ui/Avatar";
 import PhotoUploader from "@/components/PhotoUploader";
 import LogoutButton from "@/components/LogoutButton";
+import BackupCard from "@/components/BackupCard";
 
 export default async function ProfilePage() {
   const userId = await requireUserId();
@@ -58,6 +59,8 @@ export default async function ProfilePage() {
           </Link>
         ))}
       </nav>
+
+      <BackupCard />
 
       <LogoutButton />
     </div>
