@@ -3,9 +3,9 @@ import { prisma } from "./prisma";
 import {
   Entry,
   Group,
+  GroupStats,
   GroupWithMembers,
   Person,
-  PersonSummary,
   PersonWithCount,
 } from "./types";
 
@@ -124,12 +124,6 @@ export async function listGroupRefs(userId: number): Promise<Group[]> {
     select: { id: true, name: true, photoUrl: true },
     orderBy: { name: "asc" },
   });
-}
-
-export interface GroupStats {
-  totalEntries: number;
-  topPerson: (PersonSummary & { entryCount: number }) | null;
-  memberCounts: Record<number, number>;
 }
 
 export async function getGroupDetail(

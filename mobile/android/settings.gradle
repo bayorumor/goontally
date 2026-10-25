@@ -1,3 +1,9 @@
+// Capacitor plugins compile with a Java 21 toolchain; when no JDK 21 is
+// installed, Gradle downloads one (Eclipse Temurin) into ~/.gradle/jdks.
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')

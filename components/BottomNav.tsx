@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import { useQuickLog } from "@/components/log/QuickLog";
+import { useKeyboardOpen } from "@/components/ui/useKeyboardOpen";
 import { isActive, NAV_ITEMS } from "@/lib/nav";
 
 // Phone tab bar: two tabs, the log button, two tabs.
 export default function BottomNav() {
   const pathname = usePathname();
   const { openLog } = useQuickLog();
+  const keyboardOpen = useKeyboardOpen();
   const [left, right] = [NAV_ITEMS.slice(0, 2), NAV_ITEMS.slice(2)];
 
   const tab = ({ href, label, icon: Icon }: (typeof NAV_ITEMS)[number]) => {
@@ -28,6 +30,10 @@ export default function BottomNav() {
       </Link>
     );
   };
+
+  // When the keyboard shrinks the screen, the bar would ride up on top of
+  // it and cover the bottom of sheets; it isn't needed while typing.
+  if (keyboardOpen) return null;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[200] border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] md:hidden">

@@ -1,8 +1,8 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "./prisma";
 import { NAME_MAX } from "./constants";
+import { addPersonsBody, nameField } from "./schemas";
 import { isUniqueViolation, jsonError, nameEquals } from "./api";
 import {
   deleteImage,
@@ -16,8 +16,6 @@ import {
 
 // Persons and groups share their naming rules and their rename/photo/delete
 // handlers, so the routes for both stay thin.
-
-export const nameField = z.string().trim().min(1).max(NAME_MAX);
 
 type Kind = "person" | "group";
 
@@ -113,37 +111,6 @@ export async function deleteGroup(userId: number, id: number) {
 
 // POST /api/persons: adds persons to the library, optionally into a group,
 // in one transaction. Existing persons can only be added to a group.
-const addBody = z
-  .object({
-    group: z
-      .object({
-        groupId: z.number().int().positive().optional(),
-        newGroupName: nameField.optional(),
-        groupPhotoKey: z.string().max(50).optional(),
-      })
-      .refine((g) => !!g.groupId !== !!g.newGroupName, {
-        message: "Pick a group or name a new one",
-      })
-      .optional(),
-    persons: z
-      .array(
-        z
-          .object({
-            personId: z.number().int().positive().optional(),
-            newPersonName: nameField.optional(),
-            personPhotoKey: z.string().max(50).optional(),
-          })
-          .refine((r) => !!r.personId !== !!r.newPersonName, {
-            message: "Each row needs either an existing person or a new name",
-          }),
-      )
-      .min(1, "Add at least one person")
-      .max(30),
-  })
-  .refine((b) => b.group || b.persons.every((r) => r.newPersonName), {
-    message: "Existing persons can only be added to a group",
-  });
-
 // Thrown inside the transaction so it rolls back, carrying the reply.
 class Rejected extends Error {
   constructor(readonly response: NextResponse) {
@@ -160,7 +127,7 @@ export async function addToLibrary(userId: number, req: NextRequest) {
   } catch {
     return jsonError("Invalid request body", 400);
   }
-  const parsed = addBody.safeParse(raw);
+  const parsed = addPersonsBody.safeParse(raw);
   if (!parsed.success)
     return jsonError(parsed.error.issues[0]?.message ?? "Invalid data", 400);
   const { group, persons } = parsed.data;

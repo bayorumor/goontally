@@ -1,64 +1,16 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "./prisma";
 import { jsonError, nameEquals } from "./api";
 import { PhotoUpload, readPhotos, savePhotos } from "./cloudinary";
-import { nameField as name } from "./library";
+import { entryBody, type EntryBody } from "./schemas";
 
 // Shared by POST /api/entries (create) and PATCH /api/entries/[id] (edit):
 // both take the same multipart form and resolve persons/groups the same way.
 
-const id = z.number().int().positive();
-
-// Each person row is either an existing person or a new name, optionally
-// paired with an existing group or a new group name. Photos for new rows
-// are sent as separate form fields, referenced by key.
-const personRow = z
-  .object({
-    personId: id.optional(),
-    newPersonName: name.optional(),
-    personPhotoKey: z.string().max(50).optional(),
-    groupId: id.optional(),
-    newGroupName: name.optional(),
-    groupPhotoKey: z.string().max(50).optional(),
-  })
-  .refine((r) => !!r.personId !== !!r.newPersonName, {
-    message: "Each row needs either an existing person or a new name",
-  })
-  .refine((r) => !(r.groupId && r.newGroupName), {
-    message: "A row can't have both an existing and a new group",
-  });
-
-const entryBody = z
-  .object({
-    loggedAt: z.coerce.date().optional(),
-    notes: z.string().trim().max(2000).nullish(),
-    mediumTags: z.array(z.string().trim().min(1).max(100)).max(50).default([]),
-    persons: z
-      .array(personRow)
-      .min(1, "At least one person is required")
-      .max(30),
-    // Each thought names the persons it's about by their index in `persons`,
-    // so it can point at persons that are only being created by this request.
-    thoughts: z
-      .array(
-        z.object({
-          tag: z.string().trim().min(1).max(100),
-          rows: z.array(z.number().int().min(0)).max(30),
-        }),
-      )
-      .max(50)
-      .default([]),
-  })
-  .refine(
-    (b) => b.thoughts.every((t) => t.rows.every((r) => r < b.persons.length)),
-    { message: "A thought points at a person that isn't in the entry" },
-  );
-
 export interface EntryInput {
-  body: z.infer<typeof entryBody>;
+  body: EntryBody;
   photos: Map<string, File>;
 }
 

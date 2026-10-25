@@ -27,6 +27,12 @@ export interface PersonWithCount extends Person {
   entryCount: number;
 }
 
+export interface GroupStats {
+  totalEntries: number;
+  topPerson: (PersonSummary & { entryCount: number }) | null;
+  memberCounts: Record<number, number>;
+}
+
 // A thought being composed in the log form, aimed at picked persons by
 // their picker keys. With several persons at least one must be chosen.
 export interface DraftThought {

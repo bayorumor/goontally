@@ -1,21 +1,33 @@
 import { isRouteErrorResponse, useRouteError } from "react-router";
+import Link from "next/link";
+import { EmptyState } from "@/components/StateViews";
 
-// Shown when a route throws, instead of a blank screen.
+// Shown when a route throws, instead of a blank screen. A missing person or
+// group reads like the web app's 404.
 export default function RouteError() {
   const error = useRouteError();
-  const message = isRouteErrorResponse(error)
-    ? `${error.status} ${error.statusText}`
-    : error instanceof Error
-      ? error.message
-      : "Something went wrong";
+  if (isRouteErrorResponse(error) && error.status === 404)
+    return (
+      <EmptyState
+        title="Not found"
+        sub="It may have been deleted."
+        action={
+          <Link href="/" className="btn btn-primary">
+            Go home
+          </Link>
+        }
+      />
+    );
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
-      <p className="text-[17px] font-semibold">Something went wrong</p>
-      <p className="text-[14px] text-muted">{message}</p>
-      <button className="btn btn-primary mt-2" onClick={() => location.reload()}>
-        Reload
-      </button>
-    </div>
+    <EmptyState
+      title="Something went wrong"
+      sub={error instanceof Error ? error.message : undefined}
+      action={
+        <button className="btn btn-primary" onClick={() => location.reload()}>
+          Reload
+        </button>
+      }
+    />
   );
 }

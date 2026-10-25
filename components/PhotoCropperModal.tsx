@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import ReactCrop, {
   Crop,
   PixelCrop,
@@ -125,8 +126,9 @@ export default function PhotoCropperModal({
     if (!busy) onCancel();
   });
 
-  return (
-    // Above sheets (z-300), since it can open from inside the log sheet.
+  // At the end of <body>, above sheets (z-300), since it can open from
+  // inside the log sheet, and clear of any `isolate` ancestor.
+  return createPortal(
     <div className="animate-fade fixed inset-0 z-[450] flex items-center justify-center bg-black/75 p-4">
       <div
         ref={dialogRef}
@@ -186,6 +188,7 @@ export default function PhotoCropperModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

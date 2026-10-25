@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUserId, jsonError, unauthorized } from "@/lib/api";
-
-const CATEGORIES = ["thought", "medium"] as const;
-
-const optionBody = z.object({
-  category: z.enum(CATEGORIES, "Category is required"),
-  label: z
-    .string("Label is required")
-    .trim()
-    .min(1, "Label is required")
-    .max(100),
-});
+import { optionBody } from "@/lib/schemas";
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId();

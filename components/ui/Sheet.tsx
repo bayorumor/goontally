@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useModalLayer } from "./useModalLayer";
 
@@ -29,7 +30,9 @@ export default function Sheet({
 
   if (!open) return null;
 
-  return (
+  // Rendered at the end of <body>: inside a page, an `isolate` ancestor (the
+  // person and group pages have one) would keep it under the bottom nav.
+  return createPortal(
     <div
       className="animate-fade fixed inset-0 z-[300] flex items-end justify-center bg-black/60 sm:items-center sm:p-6"
       onMouseDown={(e) => {
@@ -46,7 +49,7 @@ export default function Sheet({
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
         }`}
       >
-        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+        <div className="flex items-center justify-between px-5 pb-1 pt-4">
           <h2 className="text-[17px] font-semibold">{title}</h2>
           <button
             className="icon-btn -mr-2"
@@ -56,7 +59,9 @@ export default function Sheet({
             <X size={20} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
+        {/* pt-1 leaves room for a focused field's outline, which the
+            scrolling body would otherwise clip. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-1">
           {children}
         </div>
         {footer && (
@@ -65,6 +70,7 @@ export default function Sheet({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

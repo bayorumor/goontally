@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface Props {
@@ -31,26 +32,29 @@ export default function ZoomablePhoto({ src, fullSrc, alt, className }: Props) {
         className={`${className} cursor-zoom-in`}
         onClick={() => setOpen(true)}
       />
-      {open && (
-        <div
-          className="animate-fade fixed inset-0 z-[500] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <img
-            src={fullSrc}
-            alt={alt}
-            className="max-h-full max-w-full rounded-md object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            className="icon-btn absolute right-4 top-[max(16px,env(safe-area-inset-top))] bg-black/50 !text-white"
+      {open &&
+        // At the end of <body>, clear of the page's `isolate` wrapper.
+        createPortal(
+          <div
+            className="animate-fade fixed inset-0 z-[500] flex items-center justify-center bg-black/90 p-4"
             onClick={() => setOpen(false)}
-            aria-label="Close"
           >
-            <X size={20} />
-          </button>
-        </div>
-      )}
+            <img
+              src={fullSrc}
+              alt={alt}
+              className="max-h-full max-w-full rounded-md object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="icon-btn absolute right-4 top-[max(16px,env(safe-area-inset-top))] bg-black/50 !text-white"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

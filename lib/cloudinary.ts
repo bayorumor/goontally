@@ -3,14 +3,18 @@ import { randomUUID } from "node:crypto";
 import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "./prisma";
 
+export {
+  getImageFile,
+  MAX_IMAGE_BYTES,
+  readPhotos,
+  validateImage,
+} from "./schemas";
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// Keep well under typical serverless request body limits (~4.5MB on Vercel).
-export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 const PRESETS = {
   person: {
@@ -28,41 +32,6 @@ const PRESETS = {
 };
 
 export type ImageKind = keyof typeof PRESETS;
-
-// Returns the file when the form value is a non-empty upload, null when absent.
-export function getImageFile(value: FormDataEntryValue | null): File | null {
-  return value instanceof File && value.size > 0 ? value : null;
-}
-
-// Photos are cropped to JPEG in the browser; these cover uploads from
-// elsewhere. Vector formats like SVG are left out on purpose.
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-// Returns an error message, or null when the file is acceptable.
-export function validateImage(file: File): string | null {
-  if (!IMAGE_TYPES.includes(file.type))
-    return "Use a JPEG, PNG, WebP or GIF image";
-  if (file.size > MAX_IMAGE_BYTES) return "Image must be 4MB or smaller";
-  return null;
-}
-
-// Multipart forms that create several rows send each photo as its own
-// "photo:<key>" field. Returns the files by key, or an error message.
-export function readPhotos(
-  form: FormData,
-  keys: (string | undefined)[],
-): Map<string, File> | string {
-  const photos = new Map<string, File>();
-  for (const key of keys) {
-    if (!key || photos.has(key)) continue;
-    const file = getImageFile(form.get(`photo:${key}`));
-    if (!file) return "Missing photo upload";
-    const invalid = validateImage(file);
-    if (invalid) return invalid;
-    photos.set(key, file);
-  }
-  return photos;
-}
 
 // Each upload gets a random name, so the URL of one photo says nothing about
 // the others: Cloudinary serves uploads to anyone who has the address.
