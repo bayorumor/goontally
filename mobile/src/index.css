@@ -1,0 +1,15 @@
+/* The web app's theme and component classes, unchanged. */
+@import "../../app/globals.css";
+
+/* Tailwind only generates the classes it finds; the shared components live
+   outside this folder. */
+@source "../../components";
+@source "../../lib";
+@source "./";
+
+/* next/font sets these on the web; here the fonts ship inside the app, so
+   it looks the same offline. */
+:root {
+  --font-rubik: "Rubik Variable";
+  --font-geom: "Geom Variable";
+}

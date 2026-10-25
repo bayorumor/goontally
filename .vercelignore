@@ -7,3 +7,6 @@ docs
 .claude
 CLAUDE.md
 AGENTS.md
+# The Android app; only its package.json is needed for the install.
+mobile/android
+mobile/dist
