@@ -1,0 +1,9 @@
+# Kept out of `npx vercel` uploads; Vercel reads its own environment variables.
+.env*
+node_modules
+.next
+backups
+docs
+.claude
+CLAUDE.md
+AGENTS.md
